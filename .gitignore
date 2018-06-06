@@ -1,0 +1,6 @@
+.idea/
+DCMSCorba.iml
+log/
+out/
+src/CenterServer
+src/orb.db
