@@ -17,6 +17,17 @@ import java.util.HashMap;
 
 public class CenterSystem extends CenterServicePOA {
     protected HashMap<Character, ArrayList<Records>> database = new HashMap<>();
+    private UDPServer udpServer;
+    private static final String host_name = "localhost";
+
+
+    public CenterSystem(int udpPortnumber) {
+        new Thread(()->{
+            udpServer = new UDPServer(udpPortnumber, this);
+            udpServer.run();
+        }).start();
+    }
+
     private ORB orb;
 
     public void setORB(ORB orb_val) {
@@ -72,28 +83,56 @@ public class CenterSystem extends CenterServicePOA {
         return studentRecord.getRecordID();
     }
 
-//    public String getRecordCounts(String managerId) throws RemoteException, NotBoundException {
-//        String result = "";
-//        String reply  = UDPClient.request("getservers",centerRegistryHost,centerRegistryUDPPort);
-//        String[] serverList = reply.split(";");
-//        for (String server : serverList){
-//            String[] serverParams = server.split(":");
-//            System.out.println(Arrays.toString(serverParams));
-//            result+=serverParams[0]+":"+UDPClient.request("getCount",serverParams[1],Integer.parseInt(serverParams[2]))+" ";
-//        }
-//        System.out.printf("\n"+result);
-//        Log.log(Log.getCurrentTime(), managerId, "getRecordCounts", "Successful");
-//        return result;
-//    }
-//
-//    public int getLocalRecordCount() throws RemoteException {
-//        int sum=0;
-//        for (ArrayList<Records> records:
-//                database.values()) {
-//            sum+=records.size();
-//        }
-//        return sum;
-//    }
+    public String getRecordCounts(String managerId) {
+        String result = "";
+        switch (managerId.substring(0, 3)) {
+            case "MTL": {
+                StringBuilder builder = new StringBuilder();
+                builder.append("MTL:");
+                builder.append(getLocalRecordCount());
+                builder.append("LVL:");
+                builder.append(UDPClient.request("getCount", host_name, 8181));
+                builder.append("DDO:");
+                builder.append(UDPClient.request("getCount", host_name, 8182));
+                result = builder.toString();
+                break;
+            }
+            case "LVL": {
+                StringBuilder builder = new StringBuilder();
+                builder.append("LVL:");
+                builder.append(getLocalRecordCount());
+                builder.append("MTL:");
+                builder.append(UDPClient.request("getCount", host_name, 8180));
+                builder.append("DDO:");
+                builder.append(UDPClient.request("getCount", host_name, 8182));
+                result = builder.toString();
+                break;
+            }
+            case "DDO": {
+                StringBuilder builder = new StringBuilder();
+                builder.append("DDO:");
+                builder.append(getLocalRecordCount());
+                builder.append("LVL:");
+                builder.append(UDPClient.request("getCount", host_name, 8181));
+                builder.append("MTL:");
+                builder.append(UDPClient.request("getCount", host_name, 8180));
+                result = builder.toString();
+                break;
+            }
+        }
+        System.out.printf("\n" + result);
+        Log.log(Log.getCurrentTime(), managerId, "getRecordCounts", "Successful");
+        return result;
+    }
+
+    public int getLocalRecordCount() {
+        int sum = 0;
+        for (ArrayList<Records> records :
+                database.values()) {
+            sum += records.size();
+        }
+        return sum;
+    }
 
     public String editRecord(String managerId, String recordID, String fieldName, String newValue) throws except {
         String result = "";

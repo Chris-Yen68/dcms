@@ -1,0 +1,5 @@
+MTL0000|createTRecord|firstName|lastName|address|specialiazation|location|phone
+MTL0002|createTRecord|firstName|lastNae|address|specialiazation|location|phone
+MTL0003|createTRecord|firsName|lastName|address|specialiazation|location|phone
+LVL0001|createSRecord|firstName|lastName|status|statusDate|comp6231 comp5411
+LVL0000|getRecordCounts

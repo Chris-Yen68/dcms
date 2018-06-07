@@ -6,7 +6,7 @@ import java.util.Random;
 
 public class StudentRecord extends Records implements Serializable {
 
-    private ArrayList<String> coursesRegistered;
+    private ArrayList<String> coursesRegistered=new ArrayList<>();
     private String status;
     private String statusDate;
 

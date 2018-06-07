@@ -9,7 +9,7 @@ import org.omg.PortableServer.*;
 import org.omg.PortableServer.POA;
 import java.util.Properties;
 
-public class ServerRegister {
+public class MTLServer {
 
     public static void main(String args[]) {
         try{
@@ -22,7 +22,7 @@ public class ServerRegister {
             rootpoa.the_POAManager().activate();
 
             // create servant and register it with the ORB
-            CenterSystem service=new CenterSystem();
+            CenterSystem service=new CenterSystem(8180);
             service.setORB(orb);
 
             // get object reference from the servant
@@ -41,12 +41,12 @@ public class ServerRegister {
                     NamingContextExtHelper.narrow(objRef);
 
             // bind the Object Reference in Naming
-            String name = "CenterService";
+            String name = "MTL";
             NameComponent path[] = ncRef.to_name( name );
             ncRef.rebind(path, href);
 
             System.out.println
-                    ("CenterService ready and waiting ...");
+                    ("MTL server ready and waiting ...");
 
             // wait for invocations from clients
             orb.run();
@@ -57,7 +57,7 @@ public class ServerRegister {
             e.printStackTrace(System.out);
         }
 
-        System.out.println("CenterService Exiting ...");
+        System.out.println("MTL server Exiting ...");
 
     } //end main
 } // end class

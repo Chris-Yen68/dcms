@@ -23,14 +23,15 @@ public class ServerTest
                     NamingContextExtHelper.narrow(objRef);
 
             // resolve the Object Reference in Naming
-            String name = "CenterService";
+            String name = "LVL";
             service =
                     CenterServiceHelper.narrow(ncRef.resolve_str(name));
 
             System.out.println
                     ("Obtained a handle on server object: "
                             + service);
-            System.out.println(service.createTRecord("MTL0000","asdfa","dfaf","dfaf","dfas","dfaf","dsfa"));
+            System.out.println(service.createTRecord("LVL0000","asdfa","dfaf","dfaf","dfas","dfaf","dsfa"));
+            System.out.println(service.getRecordCounts("LVL0000"));
             service.shutdown();
 
         }
