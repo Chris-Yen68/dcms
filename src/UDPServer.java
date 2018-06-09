@@ -14,6 +14,23 @@ public class UDPServer implements Runnable {
         this.centerSystem = centerSystem;
     }
 
+    public CenterSystem getCenterSystem() {
+        return centerSystem;
+    }
+
+    public void setCenterSystem(CenterSystem centerSystem) {
+        this.centerSystem = centerSystem;
+    }
+
+    public int getPortNumber() {
+        return portNumber;
+    }
+
+    public void setPortNumber(int portNumber) {
+        this.portNumber = portNumber;
+    }
+
+
     @Override
     public void run() {
         try {

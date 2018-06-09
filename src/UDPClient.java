@@ -2,16 +2,17 @@ import java.io.IOException;
 import java.net.*;
 
 public class UDPClient {
-    public static String request(String operation, String hostname ,int UDPServerPort){
+    public static String request(String operation, String hostname ,int centerPortNumber){
         String receivedInfor = "";
         DatagramSocket datagramSocket = null;
         try {
             datagramSocket = new DatagramSocket();
             try {
                 InetAddress inetAddress = InetAddress.getLocalHost();
+                int portNumber = centerPortNumber;
                 byte[] opsBytes = operation.getBytes();
 
-                DatagramPacket datagramPacket = new DatagramPacket(opsBytes,operation.length(),inetAddress,UDPServerPort);
+                DatagramPacket datagramPacket = new DatagramPacket(opsBytes,operation.length(),inetAddress,portNumber);
                 try {
                     datagramSocket.send(datagramPacket);
                     byte[] buffer = new byte[1024];
