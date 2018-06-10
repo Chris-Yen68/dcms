@@ -1,4 +1,4 @@
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -24,6 +24,14 @@ public  class  Records implements Serializable {
 
     public void regenRecordID() {
         this.recordID = genRecordID();
+    }
+    public static Object deepCopy(Object o) throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        ObjectOutputStream oo = new ObjectOutputStream(bo);
+        oo.writeObject(o);
+        ByteArrayInputStream bi = new ByteArrayInputStream(bo.toByteArray());
+        ObjectInputStream oi = new ObjectInputStream(bi);
+        return oi.readObject();
     }
 
     public String getFirstName() {

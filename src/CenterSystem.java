@@ -1,4 +1,6 @@
 import CenterServerOrb.*;
+import org.omg.CORBA.ORBPackage.InvalidName;
+import org.omg.CORBA.Object;
 import org.omg.CosNaming.*;
 import org.omg.CosNaming.NamingContextPackage.*;
 import org.omg.CORBA.*;
@@ -8,6 +10,10 @@ import org.omg.PortableServer.POA;
 
 
 import java.beans.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
@@ -25,7 +31,6 @@ public class CenterSystem extends CenterServerPOA {
         orb = orb_val;
     }
 
-
     private String centerName = "";
     protected HashMap<Character,ArrayList<Records>> database = new HashMap<>();
     private UDPServer udpServer;
@@ -35,7 +40,6 @@ public class CenterSystem extends CenterServerPOA {
     private String centerRegistryHost;
     private int centerRegistryUDPPort;
     private Thread thread;
-
 
     static {
         try {
@@ -219,6 +223,49 @@ public class CenterSystem extends CenterServerPOA {
                     Log.log(Log.getCurrentTime(), managerId, "edit: " + fieldName, result);
                 }
             }
+        }
+        return result;
+    }
+    public String transferRecord(String managerID,String recordID,String remoteCenterServerName )throws CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
+        String result = "";
+        boolean has = false;
+        Records targetRecord = null;
+        for (char key:database.keySet()){
+            for (Records record: database.get(key)){
+                if (record.genRecordID().equals(recordID)){
+                    has = true;
+                    try {
+                        targetRecord = (Records)record.deepCopy(record);
+                        database.remove(key);
+                        result += recordID + "is removed from " + getCenterName();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+        }
+
+
+        byte[] serializedMessage = ByteUtility.toByteArray(targetRecord);
+        if (has) {
+            String reply  = UDPClient.request("getservers",centerRegistryHost,centerRegistryUDPPort);
+            String[] serverList = reply.split(";");
+            for (String server : serverList){
+                String[] serverParams = server.split(":");
+                if (serverParams[0].equals(remoteCenterServerName)){
+                    String response = UDPClient.request(serializedMessage,serverParams[1],Integer.parseInt(serverParams[2]));
+                    result += response;
+                }
+            }
+
+            Log.log(Log.getCurrentTime(),managerID,"transferRecord:" + recordID,result);
+
+        }else {
+            result = "No such record Id for this manager";
+            Log.log(Log.getCurrentTime(),managerID,"tranferRecord:" + recordID,result );
         }
         return result;
     }

@@ -10,6 +10,7 @@ module CenterServerOrb
           string createSRecord(in string managerId,in string firstName,in string lastName,in list courseRegistered,in string status,in string statusDate);
           string getRecordCounts(in string managerId);
           string editRecord(in string managerId,in string recordID,in string fieldName,in string newValue) raises(except);
+          string transferRecord(in string managerId, in string recordID,in string remoteCenterServerName) raises(except);
           oneway void shutdown();
     };
 };

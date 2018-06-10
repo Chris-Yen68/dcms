@@ -1,4 +1,4 @@
-import java.io.IOException;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
@@ -42,10 +42,23 @@ public class UDPServer implements Runnable {
                 try {
                     datagramSocket.receive(request);
                     System.out.printf("some data was recevied via udp");
-                    String receiveData = new String(request.getData(),0,request.getLength());
-                    System.out.printf(receiveData);
-                    if (receiveData.equals("getCount")) {
-                        String reply = centerSystem.getLocalRecordCount() + "";
+                    Object messageReceived = null;
+                    try {
+                        messageReceived = ByteUtility.toObject(request.getData());
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    if (messageReceived instanceof String) {
+                        String receiveData = new String(request.getData(), 0, request.getLength());
+                        System.out.printf(receiveData);
+                        if (receiveData.equals("getCount")) {
+                            String reply = centerSystem.getLocalRecordCount() + "";
+                            sendBuffer = reply.getBytes();
+                        }
+                    }else if (messageReceived instanceof Records){
+                        Records record = (Records)messageReceived;
+                        centerSystem.database.get(record.getLastName().charAt(0)).add(record);
+                        String reply = "," + record.getRecordID() + " is stored in the" + centerSystem.getCenterName();
                         sendBuffer = reply.getBytes();
                     }
 
