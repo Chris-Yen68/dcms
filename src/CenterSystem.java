@@ -8,7 +8,6 @@ import org.omg.PortableServer.*;
 import org.omg.PortableServer.POA;
 
 
-
 import java.beans.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,15 +26,16 @@ import java.util.HashMap;
 
 public class CenterSystem extends CenterServerPOA {
     private ORB orb;
+
     public void setORB(ORB orb_val) {
         orb = orb_val;
     }
 
     private String centerName = "";
-    protected HashMap<Character,ArrayList<Records>> database = new HashMap<>();
+    protected HashMap<Character, ArrayList<Records>> database = new HashMap<>();
     private UDPServer udpServer;
     private static Registry centerRegistry;
-    private static int randomId=9999;
+    private static int randomId = 9999;
     private int portNumber;
     private String centerRegistryHost;
     private int centerRegistryUDPPort;
@@ -54,16 +54,16 @@ public class CenterSystem extends CenterServerPOA {
     }
 
 
-    public CenterSystem(String centerName,int portNumber, String centerRegistryHost, int centerRegistryUDPPort) throws Exception {
+    public CenterSystem(String centerName, int portNumber, String centerRegistryHost, int centerRegistryUDPPort) throws Exception {
         super();
         this.portNumber = portNumber;
-        this.centerRegistryHost=centerRegistryHost;
-        this.centerRegistryUDPPort=centerRegistryUDPPort;
-        this.centerName=centerName;
-        udpServer = new UDPServer(portNumber,this);
+        this.centerRegistryHost = centerRegistryHost;
+        this.centerRegistryUDPPort = centerRegistryUDPPort;
+        this.centerName = centerName;
+        udpServer = new UDPServer(portNumber, this);
         thread = new Thread(udpServer);
         thread.start();
-        UDPClient.request("register:"+centerName+":"+InetAddress.getLocalHost().getHostName()+":"+portNumber,centerRegistryHost, centerRegistryUDPPort);
+        UDPClient.request("register:" + centerName + ":" + InetAddress.getLocalHost().getHostName() + ":" + portNumber, centerRegistryHost, centerRegistryUDPPort);
 
     }
 
@@ -112,7 +112,7 @@ public class CenterSystem extends CenterServerPOA {
                 database.put(key, value);
             }
         }
-        Log.log(Log.getCurrentTime(), managerId, "createTRecord", "Create successfully! Record ID is "+teacherRecord.getRecordID());
+        Log.log(Log.getCurrentTime(), managerId, "createTRecord", "Create successfully! Record ID is " + teacherRecord.getRecordID());
         return teacherRecord.getRecordID();
     }
 
@@ -129,29 +129,29 @@ public class CenterSystem extends CenterServerPOA {
             value.add(studentRecord);
             database.put(key, value);
         }
-        Log.log(Log.getCurrentTime(), managerId, "createSRecord", "Create successfully! Record ID is "+studentRecord.getRecordID());
+        Log.log(Log.getCurrentTime(), managerId, "createSRecord", "Create successfully! Record ID is " + studentRecord.getRecordID());
         return studentRecord.getRecordID();
     }
 
     public String getRecordCounts(String managerId) {
         String result = "";
-        String reply  = UDPClient.request("getservers",centerRegistryHost,centerRegistryUDPPort);
+        String reply = UDPClient.request("getservers", centerRegistryHost, centerRegistryUDPPort);
         String[] serverList = reply.split(";");
-        for (String server : serverList){
+        for (String server : serverList) {
             String[] serverParams = server.split(":");
             System.out.println(Arrays.toString(serverParams));
-            result+=serverParams[0]+":"+UDPClient.request("getCount",serverParams[1],Integer.parseInt(serverParams[2]))+" ";
+            result += serverParams[0] + ":" + UDPClient.request("getCount", serverParams[1], Integer.parseInt(serverParams[2])) + " ";
         }
-        System.out.printf("\n"+result);
+        System.out.printf("\n" + result);
         //Log.log(Log.getCurrentTime(),centerName,managerId,"getRecordCounts, Successful");
         return result;
     }
 
     public int getLocalRecordCount() throws RemoteException {
-        int sum=0;
-        for (ArrayList<Records> records:
-             database.values()) {
-            sum+=records.size();
+        int sum = 0;
+        for (ArrayList<Records> records :
+                database.values()) {
+            sum += records.size();
         }
         return sum;
     }
@@ -169,9 +169,8 @@ public class CenterSystem extends CenterServerPOA {
                      Teacher record, it could take its superclass Record...
                     */
                     try {
-                         recordInfo = Introspector.getBeanInfo(record.getClass());
-                    } catch (Exception e)
-                    {
+                        recordInfo = Introspector.getBeanInfo(record.getClass());
+                    } catch (Exception e) {
                         return e.getMessage();
                     }
 
@@ -199,7 +198,7 @@ public class CenterSystem extends CenterServerPOA {
                                 Statement stmt = new Statement(record, prop.getWriteMethod().getName(), new java.lang.Object[]{newValue});
                                 try {
                                     stmt.execute();
-                                } catch (Exception e){
+                                } catch (Exception e) {
                                     return e.getMessage();
                                 }
                                 result = "Record updated";
@@ -218,7 +217,7 @@ public class CenterSystem extends CenterServerPOA {
                     result = "fieldName doesn't match record type";
                     String operation = "edit: " + fieldName;
                     Log.log(Log.getCurrentTime(), managerId, operation, result);
-                } else{
+                } else {
                     result = "No such record Id for this manager";
                     Log.log(Log.getCurrentTime(), managerId, "edit: " + fieldName, result);
                 }
@@ -226,16 +225,17 @@ public class CenterSystem extends CenterServerPOA {
         }
         return result;
     }
-    public String transferRecord(String managerID,String recordID,String remoteCenterServerName )throws CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
+
+    public String transferRecord(String managerID, String recordID, String remoteCenterServerName) {
         String result = "";
         boolean has = false;
         Records targetRecord = null;
-        for (char key:database.keySet()){
-            for (Records record: database.get(key)){
-                if (record.genRecordID().equals(recordID)){
+        for (char key : database.keySet()) {
+            for (Records record : database.get(key)) {
+                if (record.genRecordID().equals(recordID)) {
                     has = true;
                     try {
-                        targetRecord = (Records)record.deepCopy(record);
+                        targetRecord = (Records) record.deepCopy(record);
                         database.remove(key);
                         result += recordID + "is removed from " + getCenterName();
                     } catch (IOException e) {
@@ -251,21 +251,21 @@ public class CenterSystem extends CenterServerPOA {
 
         byte[] serializedMessage = ByteUtility.toByteArray(targetRecord);
         if (has) {
-            String reply  = UDPClient.request("getservers",centerRegistryHost,centerRegistryUDPPort);
+            String reply = UDPClient.request("getservers", centerRegistryHost, centerRegistryUDPPort);
             String[] serverList = reply.split(";");
-            for (String server : serverList){
+            for (String server : serverList) {
                 String[] serverParams = server.split(":");
-                if (serverParams[0].equals(remoteCenterServerName)){
-                    String response = UDPClient.request(serializedMessage,serverParams[1],Integer.parseInt(serverParams[2]));
+                if (serverParams[0].equals(remoteCenterServerName)) {
+                    String response = UDPClient.request(serializedMessage, serverParams[1], Integer.parseInt(serverParams[2]));
                     result += response;
                 }
             }
 
-            Log.log(Log.getCurrentTime(),managerID,"transferRecord:" + recordID,result);
+            Log.log(Log.getCurrentTime(), managerID, "transferRecord:" + recordID, result);
 
-        }else {
+        } else {
             result = "No such record Id for this manager";
-            Log.log(Log.getCurrentTime(),managerID,"tranferRecord:" + recordID,result );
+            Log.log(Log.getCurrentTime(), managerID, "tranferRecord:" + recordID, result);
         }
         return result;
     }

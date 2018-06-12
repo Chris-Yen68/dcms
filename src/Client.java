@@ -10,10 +10,13 @@ import java.rmi.RemoteException;
 import java.util.Properties;
 import java.util.Scanner;
 
+import CenterServerOrb.CenterServerPackage.except;
 import org.omg.CORBA.ORB;
 import org.omg.CORBA.Object;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
+import org.omg.CosNaming.NamingContextPackage.CannotProceed;
+import org.omg.CosNaming.NamingContextPackage.InvalidName;
 
 public class Client {
     public Client() {
@@ -24,7 +27,7 @@ public class Client {
     }
 
     public void scan(String[] args) throws Exception {
-        ORB orb = ORB.init(args, (Properties)null);
+        ORB orb = ORB.init(args,null);
         Object objRef = orb.resolve_initial_references("NameService");
         NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
         String managerId = "";
@@ -83,7 +86,8 @@ public class Client {
         System.out.println("2> Create Student Record.");
         System.out.println("3> Get Record Counts.");
         System.out.println("4> Edit Record.");
-        System.out.println("5> Exit.");
+        System.out.println("5> Transfer Record");
+        System.out.println("6> Exit.");
         option = scanner.nextInt();
         switch(option) {
             case 1:
@@ -99,6 +103,9 @@ public class Client {
                 this.editRecord(stub, managerId);
                 break;
             case 5:
+                this.transferRecord(stub, managerId);
+                break;
+            case 6:
                 System.out.println("GoodBye.");
         }
 
@@ -152,6 +159,16 @@ public class Client {
         System.out.println("Please input new value:");
         String newValue = scanner.nextLine().trim();
         String result = stub.editRecord(managerId, recordId, fieldName, newValue);
+        System.out.printf(result + "\n");
+    }
+
+    public void transferRecord(CenterServer stub, String managerId) throws InvalidName, except, CannotProceed {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Please input your record id:");
+        String recordId = scanner.nextLine().trim();
+        System.out.println("Please input the remote server name you want to transfer:");
+        String serverName = scanner.nextLine().trim();
+        String result = stub.transferRecord(managerId, recordId, serverName);
         System.out.printf(result + "\n");
     }
 

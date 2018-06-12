@@ -49,7 +49,7 @@ public class UDPServer implements Runnable {
                         e.printStackTrace();
                     }
                     if (messageReceived instanceof String) {
-                        String receiveData = new String(request.getData(), 0, request.getLength());
+                        String receiveData = (String)messageReceived;
                         System.out.printf(receiveData);
                         if (receiveData.equals("getCount")) {
                             String reply = centerSystem.getLocalRecordCount() + "";
