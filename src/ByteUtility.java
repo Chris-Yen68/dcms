@@ -11,18 +11,30 @@ public class ByteUtility {
         return result;
     }
     public static Object toObject (byte[] bytes) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-        ObjectInputStream is = new ObjectInputStream(in);
-        return is.readObject();
+        Object obj = null;
+        try {
+            ByteArrayInputStream bis = new ByteArrayInputStream (bytes);
+            ObjectInputStream ois = new ObjectInputStream (bis);
+            obj = ois.readObject();
+            ois.close();
+            bis.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (ClassNotFoundException ex) {
+            ex.printStackTrace();
+        }
+        return obj;
     }
     public static byte[] toByteArray (Object obj) {
         byte[] bytes = null;
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
-            ObjectOutputStream os = new ObjectOutputStream(out);
-            os.writeObject(obj);
-            os.writeObject(obj);
-            return out.toByteArray();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(obj);
+            oos.flush();
+            bytes = bos.toByteArray ();
+            oos.close();
+            bos.close();
         } catch (IOException ex) {
             ex.printStackTrace();
         }

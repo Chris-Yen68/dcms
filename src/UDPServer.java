@@ -2,6 +2,8 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class UDPServer implements Runnable {
     private int portNumber;
@@ -42,22 +44,32 @@ public class UDPServer implements Runnable {
                 try {
                     datagramSocket.receive(request);
                     System.out.printf("some data was recevied via udp");
-                    Object messageReceived = null;
+                    Object object = null;
                     try {
-                        messageReceived = ByteUtility.toObject(request.getData());
+                         object = ByteUtility.toObject(request.getData());
+
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
                     }
-                    if (messageReceived instanceof String) {
-                        String receiveData = new String(request.getData(), 0, request.getLength());
+                    if (object instanceof String) {
+                        String receiveData =  (String)object;
                         System.out.printf(receiveData);
                         if (receiveData.equals("getCount")) {
                             String reply = centerSystem.getLocalRecordCount() + "";
                             sendBuffer = reply.getBytes();
                         }
-                    }else if (messageReceived instanceof Records){
-                        Records record = (Records)messageReceived;
-                        centerSystem.database.get(record.getLastName().charAt(0)).add(record);
+                    }else if (object instanceof Records){
+                        Records record = (Records)object;
+                        HashMap<Character,ArrayList<Records>> centerdata = centerSystem.database;
+                        if (centerdata.get(record.getLastName().charAt(0))!= null) {
+                            centerdata.get(record.getLastName().charAt(0)).add(record);
+
+                        }else {
+                            ArrayList<Records> newArray = new ArrayList<>();
+                            newArray.add(record);
+                            centerdata.put(record.getLastName().charAt(0),newArray);
+                            System.out.println(record.getRecordID());
+                        }
                         String reply = "," + record.getRecordID() + " is stored in the" + centerSystem.getCenterName();
                         sendBuffer = reply.getBytes();
                     }

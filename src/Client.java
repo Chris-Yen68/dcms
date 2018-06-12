@@ -10,10 +10,13 @@ import java.rmi.RemoteException;
 import java.util.Properties;
 import java.util.Scanner;
 
+import CenterServerOrb.CenterServerPackage.except;
 import org.omg.CORBA.ORB;
 import org.omg.CORBA.Object;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
+import org.omg.CosNaming.NamingContextPackage.CannotProceed;
+import org.omg.CosNaming.NamingContextPackage.InvalidName;
 
 public class Client {
     public Client() {
@@ -83,7 +86,8 @@ public class Client {
         System.out.println("2> Create Student Record.");
         System.out.println("3> Get Record Counts.");
         System.out.println("4> Edit Record.");
-        System.out.println("5> Exit.");
+        System.out.println("5> Transfer Record.");
+        System.out.println("6> Exit.");
         option = scanner.nextInt();
         switch(option) {
             case 1:
@@ -99,10 +103,13 @@ public class Client {
                 this.editRecord(stub, managerId);
                 break;
             case 5:
+                this.transferRecord(stub,managerId);
+                break;
+            case 6:
                 System.out.println("GoodBye.");
         }
 
-        return option != 5;
+        return option != 6;
     }
 
     public void createTRecord(CenterServer stub, String managerId) throws RemoteException {
@@ -153,6 +160,15 @@ public class Client {
         String newValue = scanner.nextLine().trim();
         String result = stub.editRecord(managerId, recordId, fieldName, newValue);
         System.out.printf(result + "\n");
+    }
+    public void transferRecord(CenterServer stub, String managerId) throws InvalidName, except, CannotProceed {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Please input the transfer record id:");
+        String recordId = scanner.nextLine().trim();
+        System.out.println("Please input the destination to transfer:");
+        String centerName = scanner.nextLine().trim();
+        String result = stub.transferRecord(managerId,recordId,centerName);
+        System.out.println(result);
     }
 
     public boolean verifyId(String managerId) throws Exception {
