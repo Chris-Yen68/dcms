@@ -35,11 +35,11 @@ public class DDOServer {
 
 
         System.out.println(serverName+" is launched");
-        orb.run();
-        System.out.println("press stop to shut down!");
+        System.out.println("input s to shut down!");
         Scanner scanner = new Scanner(System.in);
-        if (scanner.nextLine().equals("stop")){
+        if (scanner.nextLine().equals("s")){
             server.shutdown();
+            System.exit(0);
         }
     }
 }

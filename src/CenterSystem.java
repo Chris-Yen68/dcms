@@ -31,27 +31,13 @@ public class CenterSystem extends CenterServerPOA {
         orb = orb_val;
     }
 
-    private String centerName = "";
+    private String centerName;
     protected HashMap<Character, ArrayList<Records>> database = new HashMap<>();
     private UDPServer udpServer;
-    private static Registry centerRegistry;
-    private static int randomId = 9999;
     private int portNumber;
     private String centerRegistryHost;
     private int centerRegistryUDPPort;
     private Thread thread;
-
-    static {
-        try {
-            centerRegistry = LocateRegistry.getRegistry("localhost", 2000);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public int getPortNumber() {
-        return portNumber;
-    }
 
 
     public CenterSystem(String centerName, int portNumber, String centerRegistryHost, int centerRegistryUDPPort) throws Exception {
@@ -63,44 +49,33 @@ public class CenterSystem extends CenterServerPOA {
         udpServer = new UDPServer(portNumber, this);
         thread = new Thread(udpServer);
         thread.start();
-        UDPClient.request("register:" + centerName + ":" + InetAddress.getLocalHost().getHostName() + ":" + portNumber, centerRegistryHost, centerRegistryUDPPort);
+        UDPClient.request("register:" + centerName + ":" + InetAddress.getLocalHost().getHostName() + ":" + this.portNumber, centerRegistryHost, centerRegistryUDPPort);
 
-    }
-
-    public UDPServer getUdpServer() {
-        return udpServer;
-    }
-
-    public void setUdpServer(UDPServer udpServer) {
-        this.udpServer = udpServer;
-        new Thread(udpServer).start();
     }
 
     public String getCenterName() {
         return centerName;
     }
 
-    public void setCenterName(String centerName) {
-        this.centerName = centerName;
-    }
-
     private void validateRecordId(Records inRecord, char key) {
         String recordId = inRecord.getRecordID();
-        if (database.get(key) != null) {
-            for (Records record : database.get(key)) {
-                if (record.getRecordID().equals(recordId)) {
-                    inRecord.regenRecordID();
-                    validateRecordId(inRecord, key);
-                    break;
+            if (database.get(key) != null) {
+                for (Records record : database.get(key)) {
+                    if (record.getRecordID().equals(recordId)) {
+                        inRecord.regenRecordID();
+                        validateRecordId(inRecord, key);
+                        break;
+                    }
                 }
             }
-        }
+
     }
 
     public String createTRecord(String managerId, String firstName, String lastName, String address, String phone, String specialization, String location) {
         TeacherRecord teacherRecord = new TeacherRecord(firstName, lastName, address, phone, specialization, location);
         char key = lastName.charAt(0);
-        validateRecordId(teacherRecord, key);
+        synchronized (this) {
+            validateRecordId(teacherRecord, key);
             if (database.get(key) == null) {
                 ArrayList<Records> value = new ArrayList<>();
                 value.add(teacherRecord);
@@ -110,6 +85,7 @@ public class CenterSystem extends CenterServerPOA {
                 value.add(teacherRecord);
                 database.put(key, value);
             }
+        }
         Log.log(Log.getCurrentTime(), managerId, "createTRecord", "Create successfully! Record ID is " + teacherRecord.getRecordID());
         return teacherRecord.getRecordID();
     }
@@ -117,15 +93,17 @@ public class CenterSystem extends CenterServerPOA {
     public String createSRecord(String managerId, String firstName, String lastName, String[] courseRegistered, String status, String statusDate) {
         StudentRecord studentRecord = new StudentRecord(firstName, lastName, courseRegistered, status, statusDate);
         char key = lastName.charAt(0);
-        validateRecordId(studentRecord, key);
-        if (database.get(key) == null) {
-            ArrayList<Records> value = new ArrayList<>();
-            value.add(studentRecord);
-            database.put(key, value);
-        } else {
-            ArrayList<Records> value = database.get(key);
-            value.add(studentRecord);
-            database.put(key, value);
+        synchronized (this) {
+            validateRecordId(studentRecord, key);
+            if (database.get(key) == null) {
+                ArrayList<Records> value = new ArrayList<>();
+                value.add(studentRecord);
+                database.put(key, value);
+            } else {
+                ArrayList<Records> value = database.get(key);
+                value.add(studentRecord);
+                database.put(key, value);
+            }
         }
         Log.log(Log.getCurrentTime(), managerId, "createSRecord", "Create successfully! Record ID is " + studentRecord.getRecordID());
         return studentRecord.getRecordID();
@@ -194,19 +172,21 @@ public class CenterSystem extends CenterServerPOA {
                             * look into java reflection and java beans library.
                              */
                             if (ableModified) {
-                                Statement stmt = new Statement(record, prop.getWriteMethod().getName(), new java.lang.Object[]{newValue});
-                                try {
-                                    stmt.execute();
-                                } catch (Exception e) {
-                                    return e.getMessage();
+                                synchronized (this) {
+                                    Statement stmt = new Statement(record, prop.getWriteMethod().getName(), new java.lang.Object[]{newValue});
+                                    try {
+                                        stmt.execute();
+                                    } catch (Exception e) {
+                                        return e.getMessage();
+                                    }
+                                    result = "Record updated";
                                 }
-                                result = "Record updated";
                                 String operation = "edit: " + prop.getName();
                                 Log.log(Log.getCurrentTime(), managerId, operation, result);
                                 return result;
                             } else {
                                 String operation = "edit: " + prop.getName();
-                                result = "The newValue is not valid!";
+                                result = "The new value is not valid!";
                                 Log.log(Log.getCurrentTime(), managerId, operation, result);
                                 return result;
                             }
@@ -254,9 +234,6 @@ public class CenterSystem extends CenterServerPOA {
         }
 
 
-
-
-
         byte[] serializedMessage = ByteUtility.toByteArray(targetRecord);
         if (has) {
             String reply = UDPClient.request("getservers", centerRegistryHost, centerRegistryUDPPort);
@@ -279,20 +256,10 @@ public class CenterSystem extends CenterServerPOA {
     }
 
     public void shutdown() {
-        orb.shutdown(false);
-    }
 
-//    public  void stopServer(){
-//        UDPClient.request("unregister:"+centerName,centerRegistryHost,centerRegistryUDPPort);
-//        try {
-//            udpServer.stopServer();
-//            centerRegistry.unbind(centerName);
-//            UnicastRemoteObject.unexportObject(this,true);
-//        } catch (RemoteException e) {
-//            e.printStackTrace();
-//        } catch (NotBoundException e) {
-//            e.printStackTrace();
-//        }
-//    }
+        UDPClient.request("unregister:"+centerName,centerRegistryHost,centerRegistryUDPPort);
+        orb.shutdown(false);
+
+    }
 
 }

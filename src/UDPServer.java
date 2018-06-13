@@ -61,15 +61,17 @@ public class UDPServer implements Runnable {
                     }else if (object instanceof Records){
                         Records record = (Records)object;
                         HashMap<Character,ArrayList<Records>> centerdata = centerSystem.database;
-                        if (centerdata.get(record.getLastName().charAt(0))!= null) {
-                            centerdata.get(record.getLastName().charAt(0)).add(record);
+                       synchronized (this) {
+                           if (centerdata.get(record.getLastName().charAt(0)) != null) {
+                               centerdata.get(record.getLastName().charAt(0)).add(record);
 
-                        }else {
-                            ArrayList<Records> newArray = new ArrayList<>();
-                            newArray.add(record);
-                            centerdata.put(record.getLastName().charAt(0),newArray);
-                            System.out.println(record.getRecordID());
-                        }
+                           } else {
+                               ArrayList<Records> newArray = new ArrayList<>();
+                               newArray.add(record);
+                               centerdata.put(record.getLastName().charAt(0), newArray);
+                               System.out.println(record.getRecordID());
+                           }
+                       }
                         String reply = "," + record.getRecordID() + " is stored in the " + centerSystem.getCenterName();
                         sendBuffer = reply.getBytes();
                     }
