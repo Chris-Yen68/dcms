@@ -210,31 +210,19 @@ public class CenterSystem extends CenterServerPOA {
         boolean has = false;
         ArrayList<Records> toBeModified = null;
         Records transferedRecord = null;
-        Records targetRecord = null;
         for (char key:database.keySet()){
             for (Records record: database.get(key)){
                 if (record.getRecordID().equals(recordID)){
                     has = true;
-                    try {
-                        targetRecord = (Records)record.deepCopy(record);
-                        transferedRecord = record;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-
+                    transferedRecord = record;
                     toBeModified = database.get(key);
-
                 }
             }
         }
-        if (toBeModified.remove(transferedRecord)){
-            result += recordID + "is removed from " + getCenterName();
-        }
 
 
-        byte[] serializedMessage = ByteUtility.toByteArray(targetRecord);
+
+        byte[] serializedMessage = ByteUtility.toByteArray(transferedRecord);
         if (has) {
             String reply = UDPClient.request("getservers", centerRegistryHost, centerRegistryUDPPort);
             String[] serverList = reply.split(";");
@@ -244,6 +232,9 @@ public class CenterSystem extends CenterServerPOA {
                     String response = UDPClient.request(serializedMessage, serverParams[1], Integer.parseInt(serverParams[2]));
                     result += response;
                 }
+            }
+            if (toBeModified.remove(transferedRecord)){
+                result += recordID + "is removed from " + getCenterName();
             }
 
             Log.log(Log.getCurrentTime(), managerID, "transferRecord:" + recordID, result);

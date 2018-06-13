@@ -72,7 +72,7 @@ public class UDPServer implements Runnable {
                                System.out.println(record.getRecordID());
                            }
                        }
-                        String reply = "," + record.getRecordID() + " is stored in the " + centerSystem.getCenterName();
+                        String reply =  record.getRecordID() + " is stored in the " + centerSystem.getCenterName();
                         sendBuffer = reply.getBytes();
                     }
 
