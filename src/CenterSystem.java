@@ -101,7 +101,6 @@ public class CenterSystem extends CenterServerPOA {
         TeacherRecord teacherRecord = new TeacherRecord(firstName, lastName, address, phone, specialization, location);
         char key = lastName.charAt(0);
         validateRecordId(teacherRecord, key);
-        synchronized (this) {
             if (database.get(key) == null) {
                 ArrayList<Records> value = new ArrayList<>();
                 value.add(teacherRecord);
@@ -111,7 +110,6 @@ public class CenterSystem extends CenterServerPOA {
                 value.add(teacherRecord);
                 database.put(key, value);
             }
-        }
         Log.log(Log.getCurrentTime(), managerId, "createTRecord", "Create successfully! Record ID is " + teacherRecord.getRecordID());
         return teacherRecord.getRecordID();
     }
