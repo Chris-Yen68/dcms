@@ -86,7 +86,7 @@ public class Client {
         System.out.println("2> Create Student Record.");
         System.out.println("3> Get Record Counts.");
         System.out.println("4> Edit Record.");
-        System.out.println("5> Transfer Record");
+        System.out.println("5> Transfer Record.");
         System.out.println("6> Exit.");
         option = scanner.nextInt();
         switch(option) {
@@ -109,7 +109,7 @@ public class Client {
                 System.out.println("GoodBye.");
         }
 
-        return option != 5;
+        return option != 6;
     }
 
     public void createTRecord(CenterServer stub, String managerId) throws RemoteException {
@@ -161,15 +161,14 @@ public class Client {
         String result = stub.editRecord(managerId, recordId, fieldName, newValue);
         System.out.printf(result + "\n");
     }
-
     public void transferRecord(CenterServer stub, String managerId) throws InvalidName, except, CannotProceed {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Please input your record id:");
+        System.out.println("Please input the transfer record id:");
         String recordId = scanner.nextLine().trim();
-        System.out.println("Please input the remote server name you want to transfer:");
-        String serverName = scanner.nextLine().trim();
-        String result = stub.transferRecord(managerId, recordId, serverName);
-        System.out.printf(result + "\n");
+        System.out.println("Please input the destination to transfer:");
+        String centerName = scanner.nextLine().trim();
+        String result = stub.transferRecord(managerId,recordId,centerName);
+        System.out.println(result);
     }
 
     public boolean verifyId(String managerId) throws Exception {

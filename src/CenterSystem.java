@@ -140,10 +140,11 @@ public class CenterSystem extends CenterServerPOA {
         for (String server : serverList) {
             String[] serverParams = server.split(":");
             System.out.println(Arrays.toString(serverParams));
-            result += serverParams[0] + ":" + UDPClient.request("getCount", serverParams[1], Integer.parseInt(serverParams[2])) + " ";
+            byte[] getCount = ByteUtility.toByteArray("getCount");
+            result+=serverParams[0]+":"+UDPClient.request(getCount,serverParams[1],Integer.parseInt(serverParams[2]))+" ";
         }
         System.out.printf("\n" + result);
-        //Log.log(Log.getCurrentTime(),centerName,managerId,"getRecordCounts, Successful");
+        Log.log(Log.getCurrentTime(),managerId,"getRecordCounts", "Successful");
         return result;
     }
 
@@ -229,24 +230,33 @@ public class CenterSystem extends CenterServerPOA {
     public String transferRecord(String managerID, String recordID, String remoteCenterServerName) {
         String result = "";
         boolean has = false;
+        ArrayList<Records> toBeModified = null;
+        Records transferedRecord = null;
         Records targetRecord = null;
-        for (char key : database.keySet()) {
-            for (Records record : database.get(key)) {
-                if (record.genRecordID().equals(recordID)) {
+        for (char key:database.keySet()){
+            for (Records record: database.get(key)){
+                if (record.getRecordID().equals(recordID)){
                     has = true;
                     try {
-                        targetRecord = (Records) record.deepCopy(record);
-                        database.remove(key);
-                        result += recordID + "is removed from " + getCenterName();
+                        targetRecord = (Records)record.deepCopy(record);
+                        transferedRecord = record;
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
                     }
 
+                    toBeModified = database.get(key);
+
                 }
             }
         }
+        if (toBeModified.remove(transferedRecord)){
+            result += recordID + "is removed from " + getCenterName();
+        }
+
+
+
 
 
         byte[] serializedMessage = ByteUtility.toByteArray(targetRecord);
