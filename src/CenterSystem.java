@@ -234,7 +234,7 @@ public class CenterSystem extends CenterServerPOA {
                 }
             }
             if (toBeModified.remove(transferedRecord)){
-                result += recordID + "is removed from " + getCenterName();
+                result += recordID + " is removed from " + getCenterName();
             }
 
             Log.log(Log.getCurrentTime(), managerID, "transferRecord:" + recordID, result);

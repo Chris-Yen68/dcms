@@ -7,7 +7,7 @@ public class Log {
 
     public static String getCurrentTime() {
         Date date = new Date();
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String formattedDate = dateFormat.format(date);
         return formattedDate;
     }
