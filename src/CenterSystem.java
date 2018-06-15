@@ -74,7 +74,7 @@ public class CenterSystem extends CenterServerPOA {
     public String createTRecord(String managerId, String firstName, String lastName, String address, String phone, String specialization, String location) {
         TeacherRecord teacherRecord = new TeacherRecord(firstName, lastName, address, phone, specialization, location);
         char key = lastName.charAt(0);
-        synchronized (this) {
+        synchronized (database) {
             validateRecordId(teacherRecord, key);
             if (database.get(key) == null) {
                 ArrayList<Records> value = new ArrayList<>();
@@ -93,7 +93,7 @@ public class CenterSystem extends CenterServerPOA {
     public String createSRecord(String managerId, String firstName, String lastName, String[] courseRegistered, String status, String statusDate) {
         StudentRecord studentRecord = new StudentRecord(firstName, lastName, courseRegistered, status, statusDate);
         char key = lastName.charAt(0);
-        synchronized (this) {
+        synchronized (database) {
             validateRecordId(studentRecord, key);
             if (database.get(key) == null) {
                 ArrayList<Records> value = new ArrayList<>();
@@ -172,7 +172,7 @@ public class CenterSystem extends CenterServerPOA {
                             * look into java reflection and java beans library.
                              */
                             if (ableModified) {
-                                synchronized (this) {
+                                synchronized (database) {
                                     Statement stmt = new Statement(record, prop.getWriteMethod().getName(), new java.lang.Object[]{newValue});
                                     try {
                                         stmt.execute();
@@ -210,38 +210,39 @@ public class CenterSystem extends CenterServerPOA {
         boolean has = false;
         ArrayList<Records> toBeModified = null;
         Records transferedRecord = null;
-        for (char key:database.keySet()){
-            for (Records record: database.get(key)){
-                if (record.getRecordID().equals(recordID)){
-                    has = true;
-                    transferedRecord = record;
-                    toBeModified = database.get(key);
+        synchronized (database) {
+            for (char key : database.keySet()) {
+                for (Records record : database.get(key)) {
+                    if (record.getRecordID().equals(recordID)) {
+                        has = true;
+                        transferedRecord = record;
+                        toBeModified = database.get(key);
+                    }
                 }
             }
-        }
 
 
-
-        byte[] serializedMessage = ByteUtility.toByteArray(transferedRecord);
-        if (has) {
-            String reply = UDPClient.request("getservers", centerRegistryHost, centerRegistryUDPPort);
-            String[] serverList = reply.split(";");
-            for (String server : serverList) {
-                String[] serverParams = server.split(":");
-                if (serverParams[0].equals(remoteCenterServerName)) {
-                    String response = UDPClient.request(serializedMessage, serverParams[1], Integer.parseInt(serverParams[2]));
-                    result += response;
+            byte[] serializedMessage = ByteUtility.toByteArray(transferedRecord);
+            if (has) {
+                String reply = UDPClient.request("getservers", centerRegistryHost, centerRegistryUDPPort);
+                String[] serverList = reply.split(";");
+                for (String server : serverList) {
+                    String[] serverParams = server.split(":");
+                    if (serverParams[0].equals(remoteCenterServerName)) {
+                        String response = UDPClient.request(serializedMessage, serverParams[1], Integer.parseInt(serverParams[2]));
+                        result += response;
+                    }
                 }
-            }
-            if (toBeModified.remove(transferedRecord)){
-                result += recordID + " is removed from " + getCenterName();
-            }
+                if (toBeModified.remove(transferedRecord)) {
+                    result += recordID + " is removed from " + getCenterName();
+                }
 
-            Log.log(Log.getCurrentTime(), managerID, "transferRecord:" + recordID, result);
+                Log.log(Log.getCurrentTime(), managerID, "transferRecord:" + recordID, result);
 
-        } else {
-            result = "No such record Id for this manager";
-            Log.log(Log.getCurrentTime(), managerID, "tranferRecord:" + recordID, result);
+            } else {
+                result = "No such record Id for this manager";
+                Log.log(Log.getCurrentTime(), managerID, "tranferRecord:" + recordID, result);
+            }
         }
         return result;
     }
