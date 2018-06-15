@@ -23,6 +23,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class CenterSystem extends CenterServerPOA {
     private ORB orb;
@@ -38,6 +39,7 @@ public class CenterSystem extends CenterServerPOA {
     private String centerRegistryHost;
     private int centerRegistryUDPPort;
     private Thread thread;
+    private ReentrantLock lock = new ReentrantLock();
 
 
     public CenterSystem(String centerName, int portNumber, String centerRegistryHost, int centerRegistryUDPPort) throws Exception {
@@ -220,10 +222,10 @@ public class CenterSystem extends CenterServerPOA {
                     }
                 }
             }
-
-
+        boolean isValidatedCenter = remoteCenterServerName.equals("MTL") || remoteCenterServerName.equals("LVL") || remoteCenterServerName.equals("DDO");
+        boolean ableToTransfer = isValidatedCenter && has && !centerName.equals(remoteCenterServerName);
             byte[] serializedMessage = ByteUtility.toByteArray(transferedRecord);
-            if (has) {
+            if (ableToTransfer) {
                 String reply = UDPClient.request("getservers", centerRegistryHost, centerRegistryUDPPort);
                 String[] serverList = reply.split(";");
                 for (String server : serverList) {
@@ -240,7 +242,17 @@ public class CenterSystem extends CenterServerPOA {
                 Log.log(Log.getCurrentTime(), managerID, "transferRecord:" + recordID, result);
 
             } else {
-                result = "No such record Id for this manager";
+
+                if (!has) {
+                    result += "No such record Id for this manager";
+                }
+                if (!isValidatedCenter) {
+                    result += " No such Center to transfer";
+                }
+                if (centerName.equals(remoteCenterServerName)) {
+                    result += " The record is already in the Center,you do not need to tranfer!";
+
+                }
                 Log.log(Log.getCurrentTime(), managerID, "tranferRecord:" + recordID, result);
             }
         }
