@@ -61,7 +61,7 @@ public class UDPServer implements Runnable {
                     }else if (object instanceof Records){
                         Records record = (Records)object;
                         HashMap<Character,ArrayList<Records>> centerdata = centerSystem.database;
-                       synchronized (this) {
+                       synchronized (centerdata) {
                            if (centerdata.get(record.getLastName().charAt(0)) != null) {
                                centerdata.get(record.getLastName().charAt(0)).add(record);
 
