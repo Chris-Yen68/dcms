@@ -16,7 +16,7 @@ import java.util.Scanner;
     Initialise ORB object and CenterSystem object, which is actual server implementation.
     Performs ORB bind to orbd.
 
-    MTL DDO LVL servers are basically clones with proper ports and names
+
 
      */
 public class MTLServer {

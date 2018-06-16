@@ -152,9 +152,10 @@ public class CenterSystem extends CenterServerPOA {
         {
             String[] serverParams = v.split(":");
             byte[] getCount = ByteUtility.toByteArray("getCount");
-            return serverParams[0] + ":" + UDPClient.request(getCount, serverParams[1], Integer.parseInt(serverParams[2]));
-        })
-                .collect(Collectors.joining(" "));
+            String result1 = serverParams[0] + ":" + UDPClient.request(getCount, serverParams[1], Integer.parseInt(serverParams[2]));
+            System.out.printf("\n"+serverParams[0]+" processed\n");
+            return result1;
+        }).collect(Collectors.joining(" "));
 
         System.out.printf("\n" + result);
         Log.log(Log.getCurrentTime(), managerId, "getRecordCounts", "Successful");
