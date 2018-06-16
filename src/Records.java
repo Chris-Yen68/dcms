@@ -2,6 +2,10 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Random;
 
+/*
+SuperClass for records classes used in application, own genRecordId is overriden in children implementation.
+ */
+
 public  class  Records implements Serializable {
     private String firstName;
     private String lastName;
@@ -22,6 +26,8 @@ public  class  Records implements Serializable {
         return recordId;
     }
 
+    //method is used if record with the same recordId is already exists in local db
+    // while inserting or transferring a record between servers.
     public void regenRecordID() {
         this.recordID = genRecordID();
     }

@@ -39,6 +39,7 @@ public class UDPClient {
         DatagramSocket datagramSocket = null;
         try {
             datagramSocket = new DatagramSocket();
+            datagramSocket.setSoTimeout(2000);
             try {
                 InetAddress inetAddress = InetAddress.getLocalHost();
                 int portNumber = centerPortNumber;
@@ -51,7 +52,10 @@ public class UDPClient {
                     datagramSocket.receive(replayByte);
                     receivedInfor = new String(replayByte.getData(),0, replayByte.getLength());
                     datagramSocket.close();
-                } catch (IOException e) {
+                } catch (SocketTimeoutException e){
+                    receivedInfor = "server is unavailable";
+                }
+                catch (IOException e) {
                     e.printStackTrace();
                 }
             } catch (UnknownHostException e) {

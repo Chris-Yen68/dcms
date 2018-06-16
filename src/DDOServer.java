@@ -7,13 +7,27 @@ import org.omg.CosNaming.NamingContextExtHelper;
 import org.omg.PortableServer.POA;
 
 import java.util.Scanner;
+/*
+    Slightly hardcoded server launcher in terms of name, and port values,
+    which can be implemented as 1 class with input arguments like "name" "ownPort"...
+    But for ease and speed of testing and was decided to sacrifice some beautiness to comfort of usage.
+    Still, this is only end point hardcoding, core classes are pretty much in style.
 
+    Initialise ORB object and CenterSystem object, which is actual server implementation.
+    Performs ORB bind to orbd.
+
+    MTL DDO LVL servers are basically clones with proper ports and names
+
+     */
 public class DDOServer {
     public static void main(String args[]) throws Exception {
+
+        //Some hardcoded parameters
         String centerRegistryHost = "localhost";
         int centerRegistryUDPPort = 8190;
         String serverName = "DDO";
 
+        //Some objects creation
         ORB orb = ORB.init(args, null);
         POA rootpoa =
                 (POA)orb.resolve_initial_references("RootPOA");
@@ -21,8 +35,10 @@ public class DDOServer {
 
         CenterSystem server = new CenterSystem(serverName, 8182,centerRegistryHost, centerRegistryUDPPort);
 
+        //Maps ORB to CenterSystem reference.
         server.setORB(orb);
 
+        //ORB initialisation and bind part
         org.omg.CORBA.Object ref =
                 rootpoa.servant_to_reference(server);
         CenterServer href = CenterServerHelper.narrow(ref);

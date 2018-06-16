@@ -24,8 +24,28 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 public class CenterSystem extends CenterServerPOA {
+
+    /*
+
+    Class which implements CORBA IDL through its framework extending CenterServerPOA.
+    Supported methods are as per IDL declaration.
+
+    ORB object is set by launcher (particular server implementation), in which it is actually initialized and bind to orbd.
+
+    Database is implemented by the way of HashMap which puts are synchronised.
+
+    getRecordCounts is implemented using the CenterRegistry which in RMI version of appliction was acting as
+    RMIRegistry and UDPRegistry. For CORBA implementation RMI part was stripped off, and registry acts as UDP address/port
+    catalog of online servers. Some level of dynamism is supported, since this application can be functional with partially
+    started and available servers.
+
+     */
+
     private ORB orb;
 
     public void setORB(ORB orb_val) {
@@ -41,7 +61,9 @@ public class CenterSystem extends CenterServerPOA {
     private Thread thread;
     private ReentrantLock lock = new ReentrantLock();
 
-
+    /*
+     Constructor besides of creating supplementary udp listeners, registers object in CenterRegistry.
+      */
     public CenterSystem(String centerName, int portNumber, String centerRegistryHost, int centerRegistryUDPPort) throws Exception {
         super();
         this.portNumber = portNumber;
@@ -59,20 +81,25 @@ public class CenterSystem extends CenterServerPOA {
         return centerName;
     }
 
+    /*
+     Validates the record ID for existence in localDB, in case of existence - regenerates ID and validates again.
+      */
     private void validateRecordId(Records inRecord, char key) {
         String recordId = inRecord.getRecordID();
-            if (database.get(key) != null) {
-                for (Records record : database.get(key)) {
-                    if (record.getRecordID().equals(recordId)) {
-                        inRecord.regenRecordID();
-                        validateRecordId(inRecord, key);
-                        break;
-                    }
+        if (database.get(key) != null) {
+            for (Records record : database.get(key)) {
+                if (record.getRecordID().equals(recordId)) {
+                    inRecord.regenRecordID();
+                    validateRecordId(inRecord, key);
+                    break;
                 }
             }
-
+        }
     }
 
+    /*
+    I don't think we need comments over this, code is obvious.
+     */
     public String createTRecord(String managerId, String firstName, String lastName, String address, String phone, String specialization, String location) {
         TeacherRecord teacherRecord = new TeacherRecord(firstName, lastName, address, phone, specialization, location);
         char key = lastName.charAt(0);
@@ -111,21 +138,33 @@ public class CenterSystem extends CenterServerPOA {
         return studentRecord.getRecordID();
     }
 
+    /*
+    Concurrent implementation of getRecordCounts using Java8 parallel streams.
+     */
     public String getRecordCounts(String managerId) {
-        String result = "";
+        String result;
+        //gets the list of registered servers.
         String reply = UDPClient.request("getservers", centerRegistryHost, centerRegistryUDPPort);
         String[] serverList = reply.split(";");
-        for (String server : serverList) {
-            String[] serverParams = server.split(":");
-            System.out.println(Arrays.toString(serverParams));
+
+        //generates result querying servers from list above in parallel
+        result = Arrays.stream(serverList).parallel().map((v) ->
+        {
+            String[] serverParams = v.split(":");
             byte[] getCount = ByteUtility.toByteArray("getCount");
-            result+=serverParams[0]+":"+UDPClient.request(getCount,serverParams[1],Integer.parseInt(serverParams[2]))+" ";
-        }
+            return serverParams[0] + ":" + UDPClient.request(getCount, serverParams[1], Integer.parseInt(serverParams[2]));
+        })
+                .collect(Collectors.joining(" "));
+
         System.out.printf("\n" + result);
-        Log.log(Log.getCurrentTime(),managerId,"getRecordCounts", "Successful");
+        Log.log(Log.getCurrentTime(), managerId, "getRecordCounts", "Successful");
         return result;
     }
 
+    /*
+    Returns local record count for the particular object instance, which is executed by some instance getRecordCount query.
+
+     */
     public int getLocalRecordCount() throws RemoteException {
         int sum = 0;
         for (ArrayList<Records> records :
@@ -135,27 +174,28 @@ public class CenterSystem extends CenterServerPOA {
         return sum;
     }
 
+    /*
+
+    Edits record using java reflection, to dynamically get the object class (either Student or Teacher) and editable attributes.
+
+     */
     public String editRecord(String managerId, String recordID, String fieldName, String newValue) {
         String result = "";
         Boolean ableModified = true;
         BeanInfo recordInfo;
-
+        //looks for the recordId in local db
         for (char key : database.keySet()) {
             for (Records record : database.get(key)) {
                 if (record.getRecordID().equals(recordID)) {
-                    /* following reads information about the object, more precisely of its class, into BeanInfo
-                     not sure if in this particular case it will get proper specific class of record, eg StudentRecord or
-                     Teacher record, it could take its superclass Record...
-                    */
+
+                    // following reads information about the object, more precisely of its class, into BeanInfo
                     try {
                         recordInfo = Introspector.getBeanInfo(record.getClass());
                     } catch (Exception e) {
                         return e.getMessage();
                     }
 
-                    /*
-                    recordPds in this case is the array of properties available in this class
-                     */
+                    //recordPds in this case is the array of properties available in this class
                     PropertyDescriptor[] recordPds = recordInfo.getPropertyDescriptors();
                     for (PropertyDescriptor prop : recordPds) {
                         if (prop.getName().equals(fieldName)) {
@@ -222,8 +262,8 @@ public class CenterSystem extends CenterServerPOA {
                     }
                 }
             }
-        boolean isValidatedCenter = remoteCenterServerName.equals("MTL") || remoteCenterServerName.equals("LVL") || remoteCenterServerName.equals("DDO");
-        boolean ableToTransfer = isValidatedCenter && has && !centerName.equals(remoteCenterServerName);
+            boolean isValidatedCenter = remoteCenterServerName.equals("MTL") || remoteCenterServerName.equals("LVL") || remoteCenterServerName.equals("DDO");
+            boolean ableToTransfer = isValidatedCenter && has && !centerName.equals(remoteCenterServerName);
             byte[] serializedMessage = ByteUtility.toByteArray(transferedRecord);
             if (ableToTransfer) {
                 String reply = UDPClient.request("getservers", centerRegistryHost, centerRegistryUDPPort);
@@ -261,7 +301,7 @@ public class CenterSystem extends CenterServerPOA {
 
     public void shutdown() {
 
-        UDPClient.request("unregister:"+centerName,centerRegistryHost,centerRegistryUDPPort);
+        UDPClient.request("unregister:" + centerName, centerRegistryHost, centerRegistryUDPPort);
         orb.shutdown(false);
 
     }

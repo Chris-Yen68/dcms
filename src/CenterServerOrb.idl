@@ -1,4 +1,7 @@
 module CenterServerOrb
+/*
+Definition of IDL interface with methods used in CenterServer implementation.
+*/
 {
     typedef sequence<string> list;
     interface CenterServer

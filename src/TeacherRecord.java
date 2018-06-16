@@ -1,6 +1,10 @@
 import java.io.Serializable;
 import java.util.Random;
 
+/*
+TeacherRecord class, overrides superclass genRecordId method
+ */
+
 public class TeacherRecord extends Records implements Serializable {
 
     private String address;

@@ -2,15 +2,16 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Random;
 
+/*
+StudentRecord class, overrides superclass genRecordId method
+ */
+
 public class StudentRecord extends Records implements Serializable {
 
     private String[] coursesRegistered;
     private String status;
     private String statusDate;
 
-//    public ArrayList<String> getCoursesRegistered() {
-//        return coursesRegistered;
-//    }
 
     public synchronized void setCoursesRegistered(String[] coursesRegistered) {
         this.coursesRegistered = coursesRegistered;
