@@ -10,6 +10,9 @@ public class ByteUtility {
 
         return result;
     }
+    /*
+        change the bytes to object
+     */
     public static Object toObject (byte[] bytes) throws IOException, ClassNotFoundException {
         Object obj = null;
         try {
@@ -25,6 +28,9 @@ public class ByteUtility {
         }
         return obj;
     }
+    /*
+     change object to bytes 
+     */
     public static byte[] toByteArray (Object obj) {
         byte[] bytes = null;
         ByteArrayOutputStream bos = new ByteArrayOutputStream();

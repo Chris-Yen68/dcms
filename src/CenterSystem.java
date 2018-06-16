@@ -247,6 +247,9 @@ public class CenterSystem extends CenterServerPOA {
         }
         return result;
     }
+    /*
+       transfer record from the server associated with manager if it is varified to the remotecenter which is given by name
+     */
 
     public String transferRecord(String managerID, String recordID, String remoteCenterServerName) {
         String result = "";
@@ -263,9 +266,15 @@ public class CenterSystem extends CenterServerPOA {
                     }
                 }
             }
+            /*
+               check if the id is existing and the remotecenter is valide
+             */
             boolean isValidatedCenter = remoteCenterServerName.equals("MTL") || remoteCenterServerName.equals("LVL") || remoteCenterServerName.equals("DDO");
             boolean ableToTransfer = isValidatedCenter && has && !centerName.equals(remoteCenterServerName);
             byte[] serializedMessage = ByteUtility.toByteArray(transferedRecord);
+            /*
+             using udp to request the function and parse the object to bytes to do the work.
+             */
             if (ableToTransfer) {
                 String reply = UDPClient.request("getservers", centerRegistryHost, centerRegistryUDPPort);
                 String[] serverList = reply.split(";");
