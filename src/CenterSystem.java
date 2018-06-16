@@ -184,25 +184,26 @@ public class CenterSystem extends CenterServerPOA {
         String result = "";
         Boolean ableModified = true;
         BeanInfo recordInfo;
-        //looks for the recordId in local db
-        for (char key : database.keySet()) {
-            for (Records record : database.get(key)) {
-                if (record.getRecordID().equals(recordID)) {
+        synchronized (this) {
+            //looks for the recordId in local db
+            for (char key : database.keySet()) {
+                for (Records record : database.get(key)) {
+                    if (record.getRecordID().equals(recordID)) {
 
-                    // following reads information about the object, more precisely of its class, into BeanInfo
-                    try {
-                        recordInfo = Introspector.getBeanInfo(record.getClass());
-                    } catch (Exception e) {
-                        return e.getMessage();
-                    }
+                        // following reads information about the object, more precisely of its class, into BeanInfo
+                        try {
+                            recordInfo = Introspector.getBeanInfo(record.getClass());
+                        } catch (Exception e) {
+                            return e.getMessage();
+                        }
 
-                    //recordPds in this case is the array of properties available in this class
-                    PropertyDescriptor[] recordPds = recordInfo.getPropertyDescriptors();
-                    for (PropertyDescriptor prop : recordPds) {
-                        if (prop.getName().equals(fieldName)) {
-                            if (fieldName.equals("location")) {
-                                ableModified = newValue.equals("MTL") || newValue.equals("LVL") || newValue.equals("DDO");
-                            }
+                        //recordPds in this case is the array of properties available in this class
+                        PropertyDescriptor[] recordPds = recordInfo.getPropertyDescriptors();
+                        for (PropertyDescriptor prop : recordPds) {
+                            if (prop.getName().equals(fieldName)) {
+                                if (fieldName.equals("location")) {
+                                    ableModified = newValue.equals("MTL") || newValue.equals("LVL") || newValue.equals("DDO");
+                                }
                             /*
                             Here we form the statement to execute, in our case, update the field in the object.
                             We rely on property names captured in previous recordPds. There is no need in explicit definition
@@ -214,8 +215,8 @@ public class CenterSystem extends CenterServerPOA {
 
                             * look into java reflection and java beans library.
                              */
-                            if (ableModified) {
-                                synchronized (database) {
+                                if (ableModified) {
+
                                     Statement stmt = new Statement(record, prop.getWriteMethod().getName(), new java.lang.Object[]{newValue});
                                     try {
                                         stmt.execute();
@@ -223,25 +224,26 @@ public class CenterSystem extends CenterServerPOA {
                                         return e.getMessage();
                                     }
                                     result = "Record updated";
-                                }
-                                String operation = "edit: " + prop.getName();
-                                Log.log(Log.getCurrentTime(), managerId, operation, result);
-                                return result;
-                            } else {
-                                String operation = "edit: " + prop.getName();
-                                result = "The new value is not valid!";
-                                Log.log(Log.getCurrentTime(), managerId, operation, result);
-                                return result;
-                            }
-                        }
 
+                                    String operation = "edit: " + prop.getName();
+                                    Log.log(Log.getCurrentTime(), managerId, operation, result);
+                                    return result;
+                                } else {
+                                    String operation = "edit: " + prop.getName();
+                                    result = "The new value is not valid!";
+                                    Log.log(Log.getCurrentTime(), managerId, operation, result);
+                                    return result;
+                                }
+                            }
+
+                        }
+                        result = "fieldName doesn't match record type";
+                        String operation = "edit: " + fieldName;
+                        Log.log(Log.getCurrentTime(), managerId, operation, result);
+                    } else {
+                        result = "No such record Id for this manager";
+                        Log.log(Log.getCurrentTime(), managerId, "edit: " + fieldName, result);
                     }
-                    result = "fieldName doesn't match record type";
-                    String operation = "edit: " + fieldName;
-                    Log.log(Log.getCurrentTime(), managerId, operation, result);
-                } else {
-                    result = "No such record Id for this manager";
-                    Log.log(Log.getCurrentTime(), managerId, "edit: " + fieldName, result);
                 }
             }
         }
