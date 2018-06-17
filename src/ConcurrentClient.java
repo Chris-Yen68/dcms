@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 public class ConcurrentClient {
+    public static String testMultiThreadRecordId="";
+    public static String testMultiThreadserverName="";
 
-    public static void main(String[] args) throws Exception {
+    public void run(String[] args) throws Exception {
         new ConcurrentClient().scan(args);
     }
 
@@ -42,13 +44,22 @@ public class ConcurrentClient {
             CompletableFuture<String> result;
             switch (parameters[1]) {
                 case "createTRecord": {
+                    testMultiThreadserverName=parameters[0].substring(0,3);
                     result=createTRecord(service,parameters);
-                    result.thenAccept(s-> System.out.println("Create Successful, recordId is "+s));
+                    result.thenAccept(s-> {
+                        System.out.println("Create Successful, recordId is "+s);
+                        testMultiThreadRecordId=s;
+                        }
+                    );
                     break;
                 }
                 case "createSRecord": {
+                    testMultiThreadserverName=parameters[0].substring(0,3);
                     result=createSRecord(service,parameters);
-                    result.thenAccept(s-> System.out.println("Create Successful, recordId is "+s));
+                    result.thenAccept(s-> {
+                        System.out.println("Create Successful, recordId is "+s);
+                        testMultiThreadRecordId=s;
+                    });
                     break;
                 }
                 case "getRecordCounts": {

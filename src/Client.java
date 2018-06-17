@@ -9,6 +9,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.concurrent.CompletableFuture;
 
 import CenterServerOrb.CenterServerPackage.except;
 import org.omg.CORBA.ORB;
@@ -19,6 +20,8 @@ import org.omg.CosNaming.NamingContextPackage.CannotProceed;
 import org.omg.CosNaming.NamingContextPackage.InvalidName;
 
 public class Client {
+
+    public static CenterServer testMultiThreadStub;
     public Client() {
     }
 
@@ -27,9 +30,11 @@ public class Client {
     }
 
     public void scan(String[] args) throws Exception {
+        new ConcurrentClient().run(args);
         ORB orb = ORB.init(args,null);
         Object objRef = orb.resolve_initial_references("NameService");
         NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+        testMultiThreadStub=CenterServerHelper.narrow(ncRef.resolve_str(ConcurrentClient.testMultiThreadserverName));
         String managerId = "";
         boolean ifContinue = true;
 
@@ -87,7 +92,8 @@ public class Client {
         System.out.println("3> Get Record Counts.");
         System.out.println("4> Edit Record.");
         System.out.println("5> Transfer Record.");
-        System.out.println("6> Exit.");
+        System.out.println("6> Test concurrently edit and transfer the same record.");
+        System.out.println("7> Exit.");
         option = scanner.nextInt();
         switch(option) {
             case 1:
@@ -106,10 +112,38 @@ public class Client {
                 this.transferRecord(stub, managerId);
                 break;
             case 6:
+                this.testMultiThread(testMultiThreadStub, ConcurrentClient.testMultiThreadserverName+"0000");
+                break;
+            case 7:
                 System.out.println("GoodBye.");
         }
 
-        return option != 6;
+        return option != 7;
+    }
+
+    public void testMultiThread(CenterServer stub, String managerId){
+        CompletableFuture<String> edit=new CompletableFuture<>();
+        new Thread(()->{
+            String result= null;
+            try {
+                result = stub.editRecord(managerId, ConcurrentClient.testMultiThreadRecordId,"firstName","Joe");
+                edit.complete(result);
+            } catch (CenterServerOrb.CenterServerPackage.except except) {
+                except.printStackTrace();
+            }
+        }).start();
+        CompletableFuture<String> transfer=new CompletableFuture<>();
+        new Thread(()->{
+            String result= null;
+            try {
+                result = stub.transferRecord(managerId,ConcurrentClient.testMultiThreadRecordId,"DDO");
+                transfer.complete(result);
+            } catch (CenterServerOrb.CenterServerPackage.except except) {
+                except.printStackTrace();
+            }
+        }).start();
+        edit.thenAccept(s-> System.out.println(s));
+        transfer.thenAccept(s-> System.out.println(s));
     }
 
     public void createTRecord(CenterServer stub, String managerId) throws RemoteException {
