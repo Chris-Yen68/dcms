@@ -184,7 +184,7 @@ public class CenterSystem extends CenterServerPOA {
         String result = "";
         Boolean ableModified = true;
         BeanInfo recordInfo;
-        synchronized (this) {
+        synchronized (database) {
             //looks for the recordId in local db
             for (char key : database.keySet()) {
                 for (Records record : database.get(key)) {
@@ -240,12 +240,11 @@ public class CenterSystem extends CenterServerPOA {
                         result = "fieldName doesn't match record type";
                         String operation = "edit: " + fieldName;
                         Log.log(Log.getCurrentTime(), managerId, operation, result);
-                    } else {
-                        result = "No such record Id for this manager";
-                        Log.log(Log.getCurrentTime(), managerId, "edit: " + fieldName, result);
                     }
                 }
             }
+            result = "No such record Id for this manager";
+            Log.log(Log.getCurrentTime(), managerId, "edit: " + fieldName, result);
         }
         return result;
     }

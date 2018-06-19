@@ -31,6 +31,7 @@ public class Client {
 
     public void scan(String[] args) throws Exception {
         new ConcurrentClient().run(args);
+        Thread.sleep(50);
         ORB orb = ORB.init(args,null);
         Object objRef = orb.resolve_initial_references("NameService");
         NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
@@ -121,17 +122,8 @@ public class Client {
         return option != 7;
     }
 
-    public void testMultiThread(CenterServer stub, String managerId){
+    public void testMultiThread(CenterServer stub, String managerId) throws InterruptedException {
         CompletableFuture<String> edit=new CompletableFuture<>();
-        new Thread(()->{
-            String result= null;
-            try {
-                result = stub.editRecord(managerId, ConcurrentClient.testMultiThreadRecordId,"firstName","Joe");
-                edit.complete(result);
-            } catch (CenterServerOrb.CenterServerPackage.except except) {
-                except.printStackTrace();
-            }
-        }).start();
         CompletableFuture<String> transfer=new CompletableFuture<>();
         new Thread(()->{
             String result= null;
@@ -142,6 +134,17 @@ public class Client {
                 except.printStackTrace();
             }
         }).start();
+        Thread.sleep(50);
+        new Thread(()->{
+            String result= null;
+            try {
+                result = stub.editRecord(managerId, ConcurrentClient.testMultiThreadRecordId,"firstName","Joe");
+                edit.complete(result);
+            } catch (CenterServerOrb.CenterServerPackage.except except) {
+                except.printStackTrace();
+            }
+        }).start();
+
         edit.thenAccept(s-> System.out.println(s));
         transfer.thenAccept(s-> System.out.println(s));
     }
