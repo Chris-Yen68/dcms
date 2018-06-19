@@ -124,22 +124,22 @@ public class Client {
 
     public void testMultiThread(CenterServer stub, String managerId) throws InterruptedException {
         CompletableFuture<String> edit=new CompletableFuture<>();
+        new Thread(()->{
+            String result= null;
+            try {
+                result = stub.editRecord(managerId, ConcurrentClient.testMultiThreadRecordId,"firstName","Joe");
+                edit.complete(result);
+            } catch (CenterServerOrb.CenterServerPackage.except except) {
+                except.printStackTrace();
+            }
+        }).start();
+
         CompletableFuture<String> transfer=new CompletableFuture<>();
         new Thread(()->{
             String result= null;
             try {
                 result = stub.transferRecord(managerId,ConcurrentClient.testMultiThreadRecordId,"DDO");
                 transfer.complete(result);
-            } catch (CenterServerOrb.CenterServerPackage.except except) {
-                except.printStackTrace();
-            }
-        }).start();
-        Thread.sleep(50);
-        new Thread(()->{
-            String result= null;
-            try {
-                result = stub.editRecord(managerId, ConcurrentClient.testMultiThreadRecordId,"firstName","Joe");
-                edit.complete(result);
             } catch (CenterServerOrb.CenterServerPackage.except except) {
                 except.printStackTrace();
             }
