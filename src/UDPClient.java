@@ -33,4 +33,40 @@ public class UDPClient {
         }
         return receivedInfor;
     }
+
+    public static String request(byte[] objBytes, int centerPortNumber){
+        String receivedInfor = "";
+        DatagramSocket datagramSocket = null;
+        try {
+            datagramSocket = new DatagramSocket();
+            datagramSocket.setSoTimeout(2000);
+            try {
+                InetAddress inetAddress = InetAddress.getLocalHost();
+                int portNumber = centerPortNumber;
+
+                DatagramPacket datagramPacket = new DatagramPacket(objBytes,objBytes.length,inetAddress,portNumber);
+                try {
+                    datagramSocket.send(datagramPacket);
+                    byte[] buffer = new byte[1024];
+                    DatagramPacket replayByte = new DatagramPacket(buffer,buffer.length);
+                    datagramSocket.receive(replayByte);
+                    receivedInfor = new String(replayByte.getData(),0, replayByte.getLength());
+                    datagramSocket.close();
+                } catch (SocketTimeoutException e){
+                    receivedInfor = "server is unavailable";
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        finally {
+            datagramSocket.close();
+        }
+        return receivedInfor;
+    }
 }

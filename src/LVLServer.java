@@ -1,7 +1,7 @@
 // A server for the Hello object
 
-import CenterServer.CenterService;
-import CenterServer.CenterServiceHelper;
+import CenterServerOrb.CenterService;
+import CenterServerOrb.CenterServiceHelper;
 import org.omg.CosNaming.*;
 import org.omg.CosNaming.NamingContextPackage.*;
 import org.omg.CORBA.*;
@@ -22,7 +22,7 @@ public class LVLServer {
             rootpoa.the_POAManager().activate();
 
             // create servant and register it with the ORB
-            CenterSystem service=new CenterSystem(8181);
+            CenterServerImpl service=new CenterServerImpl("LVL",8181);
             service.setORB(orb);
 
             // get object reference from the servant

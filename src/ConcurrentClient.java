@@ -1,6 +1,6 @@
-import CenterServer.CenterService;
-import CenterServer.CenterServiceHelper;
-import CenterServer.CenterServicePackage.except;
+import CenterServerOrb.CenterService;
+import CenterServerOrb.CenterServiceHelper;
+import CenterServerOrb.CenterServicePackage.except;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
@@ -116,10 +116,10 @@ public class ConcurrentClient {
             String result= null;
             try {
                 result = stub.editRecord(parameters[0], recordId, fieldName, newValue);
-            } catch (CenterServer.CenterServicePackage.except except) {
+            } catch (CenterServerOrb.CenterServicePackage.except except) {
                 except.printStackTrace();
             }
-                future.complete(result);
+            future.complete(result);
         }).start();
         return future;
     }

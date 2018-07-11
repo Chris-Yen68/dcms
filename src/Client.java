@@ -1,5 +1,5 @@
-import CenterServer.CenterService;
-import CenterServer.CenterServiceHelper;
+import CenterServerOrb.CenterService;
+import CenterServerOrb.CenterServiceHelper;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
@@ -163,6 +163,9 @@ public class Client {
 
 
     public boolean verifyId(String managerId) throws Exception {
+        if (managerId.length()<7){
+            return false;
+        }
         String addr = managerId.substring(0, 3);
         if (addr.equals("MTL") || addr.equals("LVL") || addr.equals("DDO")) {
             return true;

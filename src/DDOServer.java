@@ -1,7 +1,7 @@
 // A server for the Hello object
 
-import CenterServer.CenterService;
-import CenterServer.CenterServiceHelper;
+import CenterServerOrb.CenterService;
+import CenterServerOrb.CenterServiceHelper;
 import org.omg.CosNaming.*;
 import org.omg.CosNaming.NamingContextPackage.*;
 import org.omg.CORBA.*;
@@ -22,7 +22,7 @@ public class DDOServer {
             rootpoa.the_POAManager().activate();
 
             // create servant and register it with the ORB
-            CenterSystem service=new CenterSystem(8182);
+            CenterServerImpl service=new CenterServerImpl("DDO",8182);
             service.setORB(orb);
 
             // get object reference from the servant
