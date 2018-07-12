@@ -1,15 +1,12 @@
-// A server for the Hello object
+package DCMSSystem;// A server for the Hello object
 
-import CenterServerOrb.CenterService;
-import CenterServerOrb.CenterServiceHelper;
+import DCMSSystem.CenterServerOrb.CenterService;
+import DCMSSystem.CenterServerOrb.CenterServiceHelper;
 import org.omg.CosNaming.*;
-import org.omg.CosNaming.NamingContextPackage.*;
 import org.omg.CORBA.*;
-import org.omg.PortableServer.*;
 import org.omg.PortableServer.POA;
-import java.util.Properties;
 
-public class LVLServer {
+public class FrontEnd {
 
     public static void main(String args[]) {
         try{
@@ -22,12 +19,12 @@ public class LVLServer {
             rootpoa.the_POAManager().activate();
 
             // create servant and register it with the ORB
-            CenterServerImpl service=new CenterServerImpl("LVL",8181);
-            service.setORB(orb);
+            FrontEndImpl frontEndImpl =new FrontEndImpl();
+            frontEndImpl.setORB(orb);
 
             // get object reference from the servant
             org.omg.CORBA.Object ref =
-                    rootpoa.servant_to_reference(service);
+                    rootpoa.servant_to_reference(frontEndImpl);
             // and cast the reference to a CORBA reference
             CenterService href = CenterServiceHelper.narrow(ref);
 
@@ -41,12 +38,12 @@ public class LVLServer {
                     NamingContextExtHelper.narrow(objRef);
 
             // bind the Object Reference in Naming
-            String name = "LVL";
+            String name = "FrontEndImpl";
             NameComponent path[] = ncRef.to_name( name );
             ncRef.rebind(path, href);
 
             System.out.println
-                    ("LVL server ready and waiting ...");
+                    ("FrontEndImpl ready and waiting ...");
 
             // wait for invocations from clients
             orb.run();
@@ -57,8 +54,7 @@ public class LVLServer {
             e.printStackTrace(System.out);
         }
 
-        System.out.println("LVL server Exiting ...");
+        System.out.println("FrontEndImpl Exiting ...");
 
     } //end main
 } // end class
-

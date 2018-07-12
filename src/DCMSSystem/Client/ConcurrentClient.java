@@ -1,13 +1,12 @@
-import CenterServerOrb.CenterService;
-import CenterServerOrb.CenterServiceHelper;
-import CenterServerOrb.CenterServicePackage.except;
+package DCMSSystem.Client;
+
+import DCMSSystem.CenterServerOrb.CenterService;
+import DCMSSystem.CenterServerOrb.CenterServiceHelper;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 public class ConcurrentClient {
 
@@ -116,7 +115,7 @@ public class ConcurrentClient {
             String result= null;
             try {
                 result = stub.editRecord(parameters[0], recordId, fieldName, newValue);
-            } catch (CenterServerOrb.CenterServicePackage.except except) {
+            } catch (DCMSSystem.CenterServerOrb.CenterServicePackage.except except) {
                 except.printStackTrace();
             }
             future.complete(result);

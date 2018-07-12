@@ -1,17 +1,14 @@
-import CenterServerOrb.CenterService;
-import CenterServerOrb.CenterServiceHelper;
+package DCMSSystem.Client;
+
+import DCMSSystem.CenterServerOrb.CenterService;
+import DCMSSystem.CenterServerOrb.CenterServiceHelper;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 public class Client {
     public static void main(String args[]) throws Exception {

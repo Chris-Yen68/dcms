@@ -1,4 +1,4 @@
-package CenterServerOrb.CenterServicePackage;
+package DCMSSystem.CenterServerOrb.CenterServicePackage;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class exceptHelper
 {
   private static String  _id = "IDL:CenterServerOrb/CenterService/except:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, CenterServerOrb.CenterServicePackage.except that)
+  public static void insert (org.omg.CORBA.Any a, except that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class exceptHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static CenterServerOrb.CenterServicePackage.except extract (org.omg.CORBA.Any a)
+  public static except extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -47,7 +47,7 @@ abstract public class exceptHelper
             "reason",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_exception_tc (CenterServerOrb.CenterServicePackage.exceptHelper.id (), "except", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_exception_tc (exceptHelper.id (), "except", _members0);
           __active = false;
         }
       }
@@ -60,16 +60,16 @@ abstract public class exceptHelper
     return _id;
   }
 
-  public static CenterServerOrb.CenterServicePackage.except read (org.omg.CORBA.portable.InputStream istream)
+  public static except read (org.omg.CORBA.portable.InputStream istream)
   {
-    CenterServerOrb.CenterServicePackage.except value = new CenterServerOrb.CenterServicePackage.except ();
+    except value = new except();
     // read and discard the repository ID
     istream.read_string ();
     value.reason = istream.read_string ();
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, CenterServerOrb.CenterServicePackage.except value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, except value)
   {
     // write the repository ID
     ostream.write_string (id ());

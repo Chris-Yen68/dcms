@@ -1,5 +1,7 @@
-package CenterServerOrb;
+package DCMSSystem.CenterServerOrb;
 
+
+import DCMSSystem.CenterServerOrb.CenterServicePackage.except;
 
 /**
 * CenterServerOrb/CenterServiceOperations.java .
@@ -13,7 +15,7 @@ public interface CenterServiceOperations
   String createTRecord (String managerId, String firstName, String lastName, String address, String phone, String specialization, String location);
   String createSRecord (String managerId, String firstName, String lastName, String[] courseRegistered, String status, String statusDate);
   String getRecordCounts (String managerId);
-  String editRecord (String managerId, String recordID, String fieldName, String newValue) throws CenterServerOrb.CenterServicePackage.except;
-  String transferRecord (String managerId, String recordID, String remoteCenterServerName) throws CenterServerOrb.CenterServicePackage.except;
+  String editRecord (String managerId, String recordID, String fieldName, String newValue) throws except;
+  String transferRecord (String managerId, String recordID, String remoteCenterServerName) throws except;
   void shutdown ();
 } // interface CenterServiceOperations

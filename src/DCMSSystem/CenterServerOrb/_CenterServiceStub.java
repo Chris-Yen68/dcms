@@ -1,5 +1,8 @@
-package CenterServerOrb;
+package DCMSSystem.CenterServerOrb;
 
+
+import DCMSSystem.CenterServerOrb.CenterServicePackage.except;
+import DCMSSystem.CenterServerOrb.CenterServicePackage.exceptHelper;
 
 /**
 * CenterServerOrb/_CenterServiceStub.java .
@@ -8,7 +11,7 @@ package CenterServerOrb;
 * Wednesday, July 11, 2018 11:38:39 o'clock AM EDT
 */
 
-public class _CenterServiceStub extends org.omg.CORBA.portable.ObjectImpl implements CenterServerOrb.CenterService
+public class _CenterServiceStub extends org.omg.CORBA.portable.ObjectImpl implements CenterService
 {
 
   public String createTRecord (String managerId, String firstName, String lastName, String address, String phone, String specialization, String location)
@@ -45,7 +48,7 @@ public class _CenterServiceStub extends org.omg.CORBA.portable.ObjectImpl implem
                 $out.write_string (managerId);
                 $out.write_string (firstName);
                 $out.write_string (lastName);
-                CenterServerOrb.listHelper.write ($out, courseRegistered);
+                listHelper.write ($out, courseRegistered);
                 $out.write_string (status);
                 $out.write_string (statusDate);
                 $in = _invoke ($out);
@@ -82,7 +85,7 @@ public class _CenterServiceStub extends org.omg.CORBA.portable.ObjectImpl implem
             }
   } // getRecordCounts
 
-  public String editRecord (String managerId, String recordID, String fieldName, String newValue) throws CenterServerOrb.CenterServicePackage.except
+  public String editRecord (String managerId, String recordID, String fieldName, String newValue) throws except
   {
             org.omg.CORBA.portable.InputStream $in = null;
             try {
@@ -98,7 +101,7 @@ public class _CenterServiceStub extends org.omg.CORBA.portable.ObjectImpl implem
                 $in = $ex.getInputStream ();
                 String _id = $ex.getId ();
                 if (_id.equals ("IDL:CenterServerOrb/CenterService/except:1.0"))
-                    throw CenterServerOrb.CenterServicePackage.exceptHelper.read ($in);
+                    throw exceptHelper.read ($in);
                 else
                     throw new org.omg.CORBA.MARSHAL (_id);
             } catch (org.omg.CORBA.portable.RemarshalException $rm) {
@@ -108,7 +111,7 @@ public class _CenterServiceStub extends org.omg.CORBA.portable.ObjectImpl implem
             }
   } // editRecord
 
-  public String transferRecord (String managerId, String recordID, String remoteCenterServerName) throws CenterServerOrb.CenterServicePackage.except
+  public String transferRecord (String managerId, String recordID, String remoteCenterServerName) throws except
   {
             org.omg.CORBA.portable.InputStream $in = null;
             try {
@@ -123,7 +126,7 @@ public class _CenterServiceStub extends org.omg.CORBA.portable.ObjectImpl implem
                 $in = $ex.getInputStream ();
                 String _id = $ex.getId ();
                 if (_id.equals ("IDL:CenterServerOrb/CenterService/except:1.0"))
-                    throw CenterServerOrb.CenterServicePackage.exceptHelper.read ($in);
+                    throw exceptHelper.read ($in);
                 else
                     throw new org.omg.CORBA.MARSHAL (_id);
             } catch (org.omg.CORBA.portable.RemarshalException $rm) {

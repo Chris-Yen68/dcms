@@ -1,4 +1,4 @@
-package CenterServerOrb.CenterServicePackage;
+package DCMSSystem.CenterServerOrb.CenterServicePackage;
 
 
 /**

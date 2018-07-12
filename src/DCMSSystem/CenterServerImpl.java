@@ -1,32 +1,25 @@
+package DCMSSystem;
 
-import CenterServerOrb.CenterServicePOA;
-import Record.Records;
-import Record.StudentRecord;
-import Record.TeacherRecord;
+import DCMSSystem.CenterServerOrb.CenterServicePOA;
+import DCMSSystem.Record.Records;
+import DCMSSystem.Record.StudentRecord;
+import DCMSSystem.Record.TeacherRecord;
+import DCMSSystem.UDP.UDPClient;
+import DCMSSystem.UDP.UDPServer;
 import org.omg.CORBA.ORB;
 
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.beans.Statement;
-import java.net.InetAddress;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class CenterServerImpl extends CenterServicePOA {
+public class CenterServerImpl {
 
-    private ORB orb;
 
-    public void setORB(ORB orb_val) {
-        orb = orb_val;
-    }
 
     private String centerName;
     public HashMap<Character, ArrayList<Records>> database = new HashMap<>();

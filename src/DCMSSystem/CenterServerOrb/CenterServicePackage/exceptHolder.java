@@ -1,4 +1,4 @@
-package CenterServerOrb.CenterServicePackage;
+package DCMSSystem.CenterServerOrb.CenterServicePackage;
 
 /**
 * CenterServerOrb/CenterServicePackage/exceptHolder.java .
@@ -9,30 +9,30 @@ package CenterServerOrb.CenterServicePackage;
 
 public final class exceptHolder implements org.omg.CORBA.portable.Streamable
 {
-  public CenterServerOrb.CenterServicePackage.except value = null;
+  public except value = null;
 
   public exceptHolder ()
   {
   }
 
-  public exceptHolder (CenterServerOrb.CenterServicePackage.except initialValue)
+  public exceptHolder (except initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = CenterServerOrb.CenterServicePackage.exceptHelper.read (i);
+    value = exceptHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    CenterServerOrb.CenterServicePackage.exceptHelper.write (o, value);
+    exceptHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return CenterServerOrb.CenterServicePackage.exceptHelper.type ();
+    return exceptHelper.type ();
   }
 
 }

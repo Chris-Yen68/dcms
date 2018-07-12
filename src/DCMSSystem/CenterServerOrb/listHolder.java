@@ -1,4 +1,4 @@
-package CenterServerOrb;
+package DCMSSystem.CenterServerOrb;
 
 
 /**
@@ -23,17 +23,17 @@ public final class listHolder implements org.omg.CORBA.portable.Streamable
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = CenterServerOrb.listHelper.read (i);
+    value = listHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    CenterServerOrb.listHelper.write (o, value);
+    listHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return CenterServerOrb.listHelper.type ();
+    return listHelper.type ();
   }
 
 }

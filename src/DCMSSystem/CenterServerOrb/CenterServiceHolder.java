@@ -1,4 +1,4 @@
-package CenterServerOrb;
+package DCMSSystem.CenterServerOrb;
 
 /**
 * CenterServerOrb/CenterServiceHolder.java .
@@ -9,30 +9,30 @@ package CenterServerOrb;
 
 public final class CenterServiceHolder implements org.omg.CORBA.portable.Streamable
 {
-  public CenterServerOrb.CenterService value = null;
+  public CenterService value = null;
 
   public CenterServiceHolder ()
   {
   }
 
-  public CenterServiceHolder (CenterServerOrb.CenterService initialValue)
+  public CenterServiceHolder (CenterService initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = CenterServerOrb.CenterServiceHelper.read (i);
+    value = CenterServiceHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    CenterServerOrb.CenterServiceHelper.write (o, value);
+    CenterServiceHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return CenterServerOrb.CenterServiceHelper.type ();
+    return CenterServiceHelper.type ();
   }
 
 }

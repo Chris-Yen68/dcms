@@ -1,4 +1,4 @@
-package CenterServerOrb;
+package DCMSSystem.CenterServerOrb;
 
 
 /**
@@ -12,7 +12,7 @@ abstract public class CenterServiceHelper
 {
   private static String  _id = "IDL:CenterServerOrb/CenterService:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, CenterServerOrb.CenterService that)
+  public static void insert (org.omg.CORBA.Any a, CenterService that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class CenterServiceHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static CenterServerOrb.CenterService extract (org.omg.CORBA.Any a)
+  public static CenterService extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -30,7 +30,7 @@ abstract public class CenterServiceHelper
   {
     if (__typeCode == null)
     {
-      __typeCode = org.omg.CORBA.ORB.init ().create_interface_tc (CenterServerOrb.CenterServiceHelper.id (), "CenterService");
+      __typeCode = org.omg.CORBA.ORB.init ().create_interface_tc (CenterServiceHelper.id (), "CenterService");
     }
     return __typeCode;
   }
@@ -40,43 +40,43 @@ abstract public class CenterServiceHelper
     return _id;
   }
 
-  public static CenterServerOrb.CenterService read (org.omg.CORBA.portable.InputStream istream)
+  public static CenterService read (org.omg.CORBA.portable.InputStream istream)
   {
     return narrow (istream.read_Object (_CenterServiceStub.class));
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, CenterServerOrb.CenterService value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, CenterService value)
   {
     ostream.write_Object ((org.omg.CORBA.Object) value);
   }
 
-  public static CenterServerOrb.CenterService narrow (org.omg.CORBA.Object obj)
+  public static CenterService narrow (org.omg.CORBA.Object obj)
   {
     if (obj == null)
       return null;
-    else if (obj instanceof CenterServerOrb.CenterService)
-      return (CenterServerOrb.CenterService)obj;
+    else if (obj instanceof CenterService)
+      return (CenterService)obj;
     else if (!obj._is_a (id ()))
       throw new org.omg.CORBA.BAD_PARAM ();
     else
     {
       org.omg.CORBA.portable.Delegate delegate = ((org.omg.CORBA.portable.ObjectImpl)obj)._get_delegate ();
-      CenterServerOrb._CenterServiceStub stub = new CenterServerOrb._CenterServiceStub ();
+      _CenterServiceStub stub = new _CenterServiceStub();
       stub._set_delegate(delegate);
       return stub;
     }
   }
 
-  public static CenterServerOrb.CenterService unchecked_narrow (org.omg.CORBA.Object obj)
+  public static CenterService unchecked_narrow (org.omg.CORBA.Object obj)
   {
     if (obj == null)
       return null;
-    else if (obj instanceof CenterServerOrb.CenterService)
-      return (CenterServerOrb.CenterService)obj;
+    else if (obj instanceof CenterService)
+      return (CenterService)obj;
     else
     {
       org.omg.CORBA.portable.Delegate delegate = ((org.omg.CORBA.portable.ObjectImpl)obj)._get_delegate ();
-      CenterServerOrb._CenterServiceStub stub = new CenterServerOrb._CenterServiceStub ();
+      _CenterServiceStub stub = new _CenterServiceStub();
       stub._set_delegate(delegate);
       return stub;
     }

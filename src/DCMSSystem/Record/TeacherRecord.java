@@ -1,4 +1,4 @@
-package Record;
+package DCMSSystem.Record;
 
 import java.io.Serializable;
 import java.util.Random;

@@ -1,5 +1,8 @@
-package CenterServerOrb;
+package DCMSSystem.CenterServerOrb;
 
+
+import DCMSSystem.CenterServerOrb.CenterServicePackage.except;
+import DCMSSystem.CenterServerOrb.CenterServicePackage.exceptHelper;
 
 /**
 * CenterServerOrb/CenterServicePOA.java .
@@ -9,7 +12,7 @@ package CenterServerOrb;
 */
 
 public abstract class CenterServicePOA extends org.omg.PortableServer.Servant
- implements CenterServerOrb.CenterServiceOperations, org.omg.CORBA.portable.InvokeHandler
+ implements CenterServiceOperations, org.omg.CORBA.portable.InvokeHandler
 {
 
   // Constructors
@@ -57,7 +60,7 @@ public abstract class CenterServicePOA extends org.omg.PortableServer.Servant
          String managerId = in.read_string ();
          String firstName = in.read_string ();
          String lastName = in.read_string ();
-         String courseRegistered[] = CenterServerOrb.listHelper.read (in);
+         String courseRegistered[] = listHelper.read (in);
          String status = in.read_string ();
          String statusDate = in.read_string ();
          String $result = null;
@@ -88,9 +91,9 @@ public abstract class CenterServicePOA extends org.omg.PortableServer.Servant
            $result = this.editRecord (managerId, recordID, fieldName, newValue);
            out = $rh.createReply();
            out.write_string ($result);
-         } catch (CenterServerOrb.CenterServicePackage.except $ex) {
+         } catch (except $ex) {
            out = $rh.createExceptionReply ();
-           CenterServerOrb.CenterServicePackage.exceptHelper.write (out, $ex);
+           exceptHelper.write (out, $ex);
          }
          break;
        }
@@ -105,9 +108,9 @@ public abstract class CenterServicePOA extends org.omg.PortableServer.Servant
            $result = this.transferRecord (managerId, recordID, remoteCenterServerName);
            out = $rh.createReply();
            out.write_string ($result);
-         } catch (CenterServerOrb.CenterServicePackage.except $ex) {
+         } catch (except $ex) {
            out = $rh.createExceptionReply ();
-           CenterServerOrb.CenterServicePackage.exceptHelper.write (out, $ex);
+           exceptHelper.write (out, $ex);
          }
          break;
        }
