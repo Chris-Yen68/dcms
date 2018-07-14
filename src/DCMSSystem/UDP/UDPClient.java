@@ -71,4 +71,20 @@ public class UDPClient {
         }
         return receivedInfor;
     }
+
+    public static void heartbit (String sourceServer, String hostname, int port){
+        DatagramSocket datagramSocket = null;
+        String hb = "hb-"+sourceServer;
+        try {
+
+            datagramSocket = new DatagramSocket();
+            InetAddress inetAddress = InetAddress.getByName(hostname);
+            byte[] hbBytes = hb.getBytes();
+            DatagramPacket datagramPacket = new DatagramPacket(hbBytes,hb.length(),inetAddress,port);
+            datagramSocket.send(datagramPacket);
+            datagramSocket.close();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 }

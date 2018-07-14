@@ -12,6 +12,7 @@ import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.beans.Statement;
+import java.lang.annotation.Native;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.stream.Collectors;
@@ -19,31 +20,39 @@ import java.util.stream.IntStream;
 
 public class CenterServerImpl {
 
-
-
     private String centerName;
+    private int pid;
     public HashMap<Character, ArrayList<Records>> database = new HashMap<>();
     private UDPServer udpServer;
-    // desired by TA solution of udp address/port hardcoding, since we hardcoding everything,
-    // we just assume that ip address is always "localhost"
-    public static int[] hardcodedServerPorts = {8180, 8181, 8182};
-    public static String[] hardcodedServerNames = {"MTL", "LVL", "DDO"};
+    private HeartBeat heartBeat;
+    public HashMap<String, ServerProperties> servers= new HashMap<>();
 
-    private Thread thread;
+    // desired by TA solution of udp address/port hardcoding, since we hardcoding everything,
+    public static int[] hardcodedServerPorts = {8180, 8181, 8182, 8170, 8171, 8172, 8160, 8116, 8162};
+    public static String[] hardcodedServerNames = {"MTL", "LVL", "DDO", "MTL1", "LVL1", "DDO1", "MTL2", "LVL2", "DDO2"};
+
+    private Thread udpServerThread;
+    private Thread heartBeatThread;
 
     public CenterServerImpl() {
     }
 
-    /*
-      Constructor besides of creating supplementary udp listeners, registers object in CenterRegistry.
-      */
-    public CenterServerImpl(String centerName, int portNumber) throws Exception {
+
+    public CenterServerImpl(String centerName, int portNumber, int pid) throws Exception {
         super();
+        //form the list of hardcoded servers in the replica group except current one.
+        IntStream.rangeClosed(0,8)
+                .filter((v) -> centerName.substring(0,3).equals(hardcodedServerNames[v].substring(0,3))
+                        && !centerName.equals(hardcodedServerNames[v]))
+                .forEach((v) -> servers.put(hardcodedServerNames[v],new ServerProperties(hardcodedServerPorts[v],hardcodedServerNames[v].substring(0,3))));
+        this.pid = pid;
         this.centerName = centerName;
         udpServer = new UDPServer(portNumber, this);
-        thread = new Thread(udpServer);
-        thread.start();
-
+        udpServerThread = new Thread(udpServer);
+        udpServerThread.start();
+        heartBeat = new HeartBeat(servers, centerName);
+        heartBeatThread = new Thread(heartBeat);
+        heartBeatThread.start();
     }
 
     public String getCenterName() {
