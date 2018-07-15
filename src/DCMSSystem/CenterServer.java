@@ -1,12 +1,9 @@
 package DCMSSystem;
-
-import DCMSSystem.CenterServerOrb.CenterServicePOA;
 import DCMSSystem.Record.Records;
 import DCMSSystem.Record.StudentRecord;
 import DCMSSystem.Record.TeacherRecord;
 import DCMSSystem.UDP.UDPClient;
 import DCMSSystem.UDP.UDPServer;
-import org.omg.CORBA.ORB;
 
 import java.beans.BeanInfo;
 import java.beans.Introspector;
@@ -18,7 +15,7 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class CenterServerImpl {
+public class CenterServer {
 
     private String centerName;
     private int pid;
@@ -34,13 +31,14 @@ public class CenterServerImpl {
     private Thread udpServerThread;
     private Thread heartBeatThread;
 
-    public CenterServerImpl() {
+    public CenterServer() {
     }
 
 
-    public CenterServerImpl(String centerName, int portNumber, int pid) throws Exception {
+    public CenterServer(String centerName, int portNumber, int pid) throws Exception {
         super();
         //form the list of hardcoded servers in the replica group except current one.
+        //as a result there should be only 2 adjacent servers from the same replica group
         IntStream.rangeClosed(0,8)
                 .filter((v) -> centerName.substring(0,3).equals(hardcodedServerNames[v].substring(0,3))
                         && !centerName.equals(hardcodedServerNames[v]))
@@ -73,6 +71,15 @@ public class CenterServerImpl {
                 }
             }
         }
+    }
+
+    // this is going to be a FIFO method caller, which will iterate through servers hashMap and send calls via udp
+    // to the members of replica group. Here I don't make any difference if current instance is leader or not,
+    // relying on FE to determine who is lead. So basically it will query adjacent servers with "state 1" get their results
+    // (confirming that result is returned and is correct), and finally return result to the calling FE
+    public String groupMethodCall(){
+        String result ="";
+        return result;
     }
 
     public String createTRecord(String managerId, String firstName, String lastName, String address, String phone, String specialization, String location) {
@@ -149,6 +156,8 @@ public class CenterServerImpl {
     /*
       Edits record using java reflection, to dynamically get the object class (either Student or Teacher) and editable attributes.
     */
+
+
     public String editRecord(String managerId, String recordID, String fieldName, String newValue) {
         String result = "";
         Boolean ableModified = true;
@@ -271,6 +280,10 @@ public class CenterServerImpl {
             }
         }
         return result;
+    }
+
+    public void bullyElect(){
+
     }
 
     public void shutdown() {

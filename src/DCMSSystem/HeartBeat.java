@@ -7,6 +7,10 @@ import java.util.HashMap;
 
 public class HeartBeat implements Runnable {
     public HashMap<String, ServerProperties> servers;
+
+    //here I'm using a serverName as a part of hb-* message string, to determine the source of HB.
+    //I'm not sure if we have other means for this, if we run everything on localhost and don't
+    //control our outbound port (that's gonna be too much).
     private String serverName;
 
     public HeartBeat(HashMap<String, ServerProperties> servers, String serverName) {

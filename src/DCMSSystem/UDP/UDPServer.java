@@ -1,7 +1,7 @@
 package DCMSSystem.UDP;
 
 import DCMSSystem.ByteUtility;
-import DCMSSystem.CenterServerImpl;
+import DCMSSystem.CenterServer;
 import DCMSSystem.Record.Records;
 
 import java.io.IOException;
@@ -14,11 +14,11 @@ import java.util.HashMap;
 
 public class UDPServer implements Runnable {
     private int portNumber;
-    private CenterServerImpl centerServer;
+    private CenterServer centerServer;
     private boolean stop = true;
     private DatagramSocket datagramSocket = null;
 
-    public UDPServer(int portNumber, CenterServerImpl centerServer) {
+    public UDPServer(int portNumber, CenterServer centerServer) {
         this.portNumber = portNumber;
         this.centerServer = centerServer;
     }
