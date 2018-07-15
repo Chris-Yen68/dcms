@@ -1,6 +1,7 @@
 package DCMSSystem.Servers;
 
 import DCMSSystem.CenterServer;
+import DCMSSystem.FrontEndImpl;
 
 import java.util.Scanner;
 
@@ -12,11 +13,10 @@ public class MTL1Server {
         int pid = Integer.parseInt(java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
         //Some objects creation
         CenterServer server = new CenterServer(serverName, 8170, pid);
-
-        System.out.println(serverName+" is launched");
+        System.out.println(serverName + " is launched");
         System.out.println("input s to shut down!");
         Scanner scanner = new Scanner(System.in);
-        if (scanner.nextLine().equals("s")){
+        if (scanner.nextLine().equals("s")) {
             server.shutdown();
             System.exit(0);
         }

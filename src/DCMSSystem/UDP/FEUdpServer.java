@@ -32,7 +32,7 @@ public class FEUdpServer implements Runnable{
                     datagramSocket.receive(request);
                     System.out.printf("some data was recevied via udp");
                     String heartbeat=request.getData().toString();
-                    frontEnd.lastNotified.put(heartbeat, new Date());
+                    frontEnd.servers.get(heartbeat).lastHB=new Date();
                 } catch (IOException e) {
                     System.out.println("UDP Server socket is closed!");
                 }

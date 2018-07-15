@@ -22,6 +22,7 @@ public class CenterServer {
     public HashMap<Character, ArrayList<Records>> database = new HashMap<>();
     private UDPServer udpServer;
     private HeartBeat heartBeat;
+    private final int FEPortNumber=8150;
     public HashMap<String, ServerProperties> servers= new HashMap<>();
 
     // desired by TA solution of udp address/port hardcoding, since we hardcoding everything,
