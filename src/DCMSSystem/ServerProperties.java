@@ -6,16 +6,10 @@ public class ServerProperties {
     //since we are hardocding, we assume we use localhost everywhere
     public final String hostName="localhost";
 
-
-    public int pid;
-
-    //1 = online, 0 = dead
+    //1 = online, 0 = dead... potentially something else
     public int state;
 
-    //1=primary, 2,3=backups
-    public int localNumber;
-
-    //1 = leader, 0 = non leader
+    //1 = leader, 0 = non leader, 2 = FE server, or if you'd like: 1=primary, 0=non primary, 2=front end
     public int status;
 
     public Date lastHB;

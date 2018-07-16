@@ -26,8 +26,8 @@ public class CenterServer {
     public HashMap<String, ServerProperties> servers= new HashMap<>();
 
     // desired by TA solution of udp address/port hardcoding, since we hardcoding everything,
-    public static int[] hardcodedServerPorts = {8180, 8181, 8182, 8170, 8171, 8172, 8160, 8116, 8162};
-    public static String[] hardcodedServerNames = {"MTL", "LVL", "DDO", "MTL1", "LVL1", "DDO1", "MTL2", "LVL2", "DDO2"};
+    public static int[] hardcodedServerPorts = {8180, 8181, 8182, 8170, 8171, 8172, 8160, 8116, 8162, 8190};
+    public static String[] hardcodedServerNames = {"MTL", "LVL", "DDO", "MTL1", "LVL1", "DDO1", "MTL2", "LVL2", "DDO2", "FEServer"};
 
     private Thread udpServerThread;
     private Thread heartBeatThread;
@@ -39,11 +39,12 @@ public class CenterServer {
     public CenterServer(String centerName, int portNumber, int pid) throws Exception {
         super();
         //form the list of hardcoded servers in the replica group except current one.
-        //as a result there should be only 2 adjacent servers from the same replica group
+        //as a result there should be address map with 2 adjacent servers from the same replica group and frontend server.
         IntStream.rangeClosed(0,8)
-                .filter((v) -> centerName.substring(0,3).equals(hardcodedServerNames[v].substring(0,3))
-                        && !centerName.equals(hardcodedServerNames[v]))
+                .filter((v) -> (centerName.substring(0,3).equals(hardcodedServerNames[v].substring(0,3))
+                        && !centerName.equals(hardcodedServerNames[v])) || hardcodedServerNames[v].equals("FEServer"))
                 .forEach((v) -> servers.put(hardcodedServerNames[v],new ServerProperties(hardcodedServerPorts[v],hardcodedServerNames[v].substring(0,3))));
+        servers.get("FEServer").status=2;
         this.pid = pid;
         this.centerName = centerName;
         udpServer = new UDPServer(portNumber, this);
@@ -283,6 +284,7 @@ public class CenterServer {
         return result;
     }
 
+    //executes election of leader among the replica group members
     public void bullyElect(){
 
     }
