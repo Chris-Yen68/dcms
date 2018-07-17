@@ -7,28 +7,16 @@ import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
-public class ConcurrentClient {
+public class DataSeedingClient {
+    public static HashMap<String, String> recordForTestMultiThread= new HashMap<String, String>();
 
-    public static void main(String[] args) throws Exception {
-        new ConcurrentClient().scan(args);
-    }
-
-    public void scan(String[] args) throws Exception {
+    public void scan( NamingContextExt ncRef) throws Exception {
         File file=new File("src/operation.txt");
         InputStreamReader reader=new InputStreamReader(new FileInputStream(file));
         BufferedReader input=new BufferedReader(reader);
         String line=input.readLine();
-
-        // create and initialize the ORB
-        ORB orb = ORB.init(args, null);
-        // get the root naming context
-        org.omg.CORBA.Object objRef =
-                orb.resolve_initial_references("NameService");
-        // Use NamingContextExt instead of NamingContext,
-        // part of the Interoperable naming Service.
-        NamingContextExt ncRef =
-                NamingContextExtHelper.narrow(objRef);
 
         while (line!=null){
             String[] parameters=line.split("\\|");
@@ -36,31 +24,29 @@ public class ConcurrentClient {
                 line=input.readLine();
                 continue;
             }
-            CenterService service= CenterServiceHelper.narrow(ncRef.resolve_str(parameters[0].substring(0,3)));
+            String serverName=parameters[0].substring(0,3);
+            CenterService service= CenterServiceHelper.narrow(ncRef.resolve_str(serverName));
             CompletableFuture<String> result;
             switch (parameters[1]) {
                 case "createTRecord": {
                     result=createTRecord(service,parameters);
-                    result.thenAccept(s-> System.out.println("Create Successful, recordId is "+s));
+                    result.thenAccept(s-> {
+                        System.out.println("Create Successful, recordId is "+s);
+                        recordForTestMultiThread.put(s, serverName);
+                    });
                     break;
                 }
                 case "createSRecord": {
                     result=createSRecord(service,parameters);
-                    result.thenAccept(s-> System.out.println("Create Successful, recordId is "+s));
+                    result.thenAccept(s-> {
+                        System.out.println("Create Successful, recordId is "+s);
+                        recordForTestMultiThread.put(s, serverName);
+                    });
                     break;
                 }
                 case "getRecordCounts": {
                     result=getRecordCounts(service,parameters[0]);
                     result.thenAccept(s-> System.out.println("Record number is "+s));
-                    break;
-                }
-                case "editRecord": {
-                    result=editRecord(service, parameters);
-                    result.thenAccept(System.out::println);
-                    break;
-                }
-                case "Exit": {
-                    System.out.println("GoodBye.");
                     break;
                 }
             }
@@ -102,23 +88,6 @@ public class ConcurrentClient {
         new Thread(()->{
                 String counts=stub.getRecordCounts(managerId);
                 future.complete(counts);
-        }).start();
-        return future;
-    }
-
-    private CompletableFuture<String> editRecord(CenterService stub, String[] parameters) throws Exception {
-        String recordId = parameters[2];
-        String fieldName = parameters[3];
-        String newValue = parameters[4];
-        CompletableFuture<String> future=new CompletableFuture<>();
-        new Thread(()->{
-            String result= null;
-            try {
-                result = stub.editRecord(parameters[0], recordId, fieldName, newValue);
-            } catch (DCMSSystem.CenterServerOrb.CenterServicePackage.except except) {
-                except.printStackTrace();
-            }
-            future.complete(result);
         }).start();
         return future;
     }

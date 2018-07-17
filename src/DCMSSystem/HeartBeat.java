@@ -32,6 +32,7 @@ public class HeartBeat implements Runnable {
                         .filter(isLeader ? ((v) -> true) : ((v) -> servers.get(v).status != 2))
                         .forEach((v) -> {
                             ServerProperties server = servers.get(v);
+                            //TODO: refactor the var name to make it more readable.
                             if (timeNow - server.lastHB.getTime() > 3000) {
                                 server.status = 0;
                             } else {

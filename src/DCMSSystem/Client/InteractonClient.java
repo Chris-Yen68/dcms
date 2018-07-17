@@ -2,15 +2,20 @@ package DCMSSystem.Client;
 
 import DCMSSystem.CenterServerOrb.CenterService;
 import DCMSSystem.CenterServerOrb.CenterServiceHelper;
+import DCMSSystem.CenterServerOrb.CenterServicePackage.except;
 import org.omg.CORBA.ORB;
+import org.omg.CORBA.ORBPackage.InvalidName;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
+import org.omg.CosNaming.NamingContextPackage.CannotProceed;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.CompletableFuture;
 
-public class Client {
+public class InteractonClient {
     public static void main(String args[]) throws Exception {
 
         /*
@@ -24,12 +29,6 @@ public class Client {
         probably client should be interactive, and consume input with Scanner
         based on which we should make case{} for called methods
          */
-
-        new Client().scan(args);
-    }
-
-    public void scan(String[] args) throws Exception {
-
         // create and initialize the ORB
         ORB orb = ORB.init(args, null);
         // get the root naming context
@@ -39,6 +38,13 @@ public class Client {
         // part of the Interoperable naming Service.
         NamingContextExt ncRef =
                 NamingContextExtHelper.narrow(objRef);
+
+        new DataSeedingClient().scan(ncRef);
+        new InteractonClient().scan(ncRef);
+    }
+
+    public void scan(NamingContextExt ncRef) throws Exception {
+
         CenterService service;
 
         String managerId = "";
@@ -98,7 +104,13 @@ public class Client {
                 editRecord(stub, managerId);
                 break;
             }
-            case 5: {
+            case 5:
+                this.transferRecord(stub, managerId);
+                break;
+            case 6:
+                this.testMultiThread(stub, managerId);
+                break;
+            case 7: {
                 System.out.println("GoodBye.");
                 break;
             }
@@ -107,7 +119,7 @@ public class Client {
         else return true;
     }
 
-    public void createTRecord(CenterService stub, String managerId) throws RemoteException {
+    public void createTRecord(CenterService stub, String managerId) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Please input teacher's first name:");
         String firstName = scanner.nextLine().trim();
@@ -122,10 +134,11 @@ public class Client {
         System.out.println("Please input teacher's phone:");
         String phone =  scanner.nextLine();
         String result=stub.createTRecord(managerId, firstName, lastName, address, phone, specialiazation, location);
+        DataSeedingClient.recordForTestMultiThread.put(result, managerId.substring(0,3));
         System.out.println("Teacher record with id: "+result+" was created");
     }
 
-    public void createSRecord(CenterService stub, String managerId) throws RemoteException {
+    public void createSRecord(CenterService stub, String managerId) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Please input student's first name:");
         String firstName = scanner.nextLine().trim();
@@ -138,10 +151,11 @@ public class Client {
         System.out.println("Please input student's courses(split with space):");
         String[] coursesRegistered=scanner.nextLine().split(" ");
         String result = stub.createSRecord(managerId, firstName, lastName, coursesRegistered, status, statusDate);
+        DataSeedingClient.recordForTestMultiThread.put(result, managerId.substring(0,3));
         System.out.println("Student record with id: "+result+" was created");
     }
 
-    public void getRecordCounts(CenterService stub, String managerId) throws RemoteException, NotBoundException {
+    public void getRecordCounts(CenterService stub, String managerId) {
         System.out.println(stub.getRecordCounts(managerId));
     }
 
@@ -158,8 +172,65 @@ public class Client {
 
     }
 
+    public void transferRecord(CenterService stub, String managerId) throws except {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Please input the transfer record id:");
+        String recordId = scanner.nextLine().trim();
+        System.out.println("Please input the destination to transfer:");
+        String centerName = scanner.nextLine().trim();
+        String result = stub.transferRecord(managerId,recordId,centerName);
+        DataSeedingClient.recordForTestMultiThread.put(recordId, centerName);
+        System.out.println(result);
+    }
 
-    public boolean verifyId(String managerId) throws Exception {
+    public void testMultiThread(CenterService stub, String managerId) {
+        String serverName=managerId.substring(0,3);
+        System.out.println("The record id list below are belongs to your server. Please input the record id as your test case.");
+        for (Map.Entry<String, String> entry: DataSeedingClient.recordForTestMultiThread.entrySet()
+                ) {
+            if(entry.getValue().equals(serverName)){
+                System.out.println(entry.getKey());
+            }
+        }
+        Scanner scanner=new Scanner(System.in);
+        String recordId=scanner.nextLine().trim();
+        System.out.println("Please input the field name you want to change:");
+        String fieldName = scanner.nextLine().trim();
+        System.out.println("Please input new value:");
+        String newValue = scanner.nextLine().trim();
+        System.out.println("Please input the destination to transfer:");
+        String centerName = scanner.nextLine().trim();
+        CompletableFuture<String> edit=new CompletableFuture<>();
+        new Thread(()->{
+            String result= null;
+            try {
+                result = stub.editRecord(managerId,recordId,fieldName,newValue);
+                edit.complete(result);
+            } catch (DCMSSystem.CenterServerOrb.CenterServicePackage.except except) {
+                except.printStackTrace();
+            }
+        }).start();
+
+        CompletableFuture<String> transfer=new CompletableFuture<>();
+        new Thread(()->{
+            String result = null;
+            try {
+                result = stub.transferRecord(managerId, recordId,centerName);
+                transfer.complete(result);
+
+            } catch (DCMSSystem.CenterServerOrb.CenterServicePackage.except except) {
+                except.printStackTrace();
+            }
+        }).start();
+
+        edit.thenAccept(s-> System.out.println(s));
+        transfer.thenAccept(s-> {
+            System.out.println(s);
+            DataSeedingClient.recordForTestMultiThread.put(s, centerName);
+        });
+    }
+
+    public boolean verifyId(String managerId) {
         if (managerId.length()<7){
             return false;
         }
