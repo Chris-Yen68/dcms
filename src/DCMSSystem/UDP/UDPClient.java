@@ -41,7 +41,7 @@ public class UDPClient {
         DatagramSocket datagramSocket = null;
         try {
             datagramSocket = new DatagramSocket();
-            datagramSocket.setSoTimeout(2000);
+            datagramSocket.setSoTimeout(1000);
             try {
                 InetAddress inetAddress = InetAddress.getLocalHost();
                 int portNumber = centerPortNumber;
@@ -55,7 +55,7 @@ public class UDPClient {
                     receivedInfor = new String(replayByte.getData(),0, replayByte.getLength());
                     datagramSocket.close();
                 } catch (SocketTimeoutException e){
-                    receivedInfor = "server is unavailable";
+                    receivedInfor = "no reply";
                 }
                 catch (IOException e) {
                     e.printStackTrace();
@@ -72,9 +72,9 @@ public class UDPClient {
         return receivedInfor;
     }
 
-    public static void heartbit (String sourceServer, String hostname, int port){
+    public static void heartbit (String sourceServer, String hostname, int pid, int port){
         DatagramSocket datagramSocket = null;
-        String hb = "hb-"+sourceServer;
+        String hb = "hb:"+sourceServer+":"+pid;
         try {
 
             datagramSocket = new DatagramSocket();
@@ -85,6 +85,8 @@ public class UDPClient {
             datagramSocket.close();
         } catch (Exception e){
             e.printStackTrace();
+        } finally {
+            datagramSocket.close();
         }
     }
 }

@@ -1,4 +1,5 @@
 package DCMSSystem;
+
 import DCMSSystem.Record.Records;
 import DCMSSystem.Record.StudentRecord;
 import DCMSSystem.Record.TeacherRecord;
@@ -22,8 +23,8 @@ public class CenterServer {
     public HashMap<Character, ArrayList<Records>> database = new HashMap<>();
     private UDPServer udpServer;
     private HeartBeat heartBeat;
-    private final int FEPortNumber=8150;
-    public HashMap<String, ServerProperties> servers= new HashMap<>();
+    private final int FEPortNumber = 8150;
+    public HashMap<String, ServerProperties> servers = new HashMap<>();
 
     // desired by TA solution of udp address/port hardcoding, since we hardcoding everything,
     public static int[] hardcodedServerPorts = {8180, 8181, 8182, 8170, 8171, 8172, 8160, 8116, 8162, 8190};
@@ -40,11 +41,11 @@ public class CenterServer {
         super();
         //form the list of hardcoded servers in the replica group except current one.
         //as a result there should be address map with 2 adjacent servers from the same replica group and frontend server.
-        IntStream.rangeClosed(0,8)
-                .filter((v) -> (centerName.substring(0,3).equals(hardcodedServerNames[v].substring(0,3))
+        IntStream.rangeClosed(0, 8)
+                .filter((v) -> (centerName.substring(0, 3).equals(hardcodedServerNames[v].substring(0, 3))
                         && !centerName.equals(hardcodedServerNames[v])) || hardcodedServerNames[v].equals("FEServer"))
-                .forEach((v) -> servers.put(hardcodedServerNames[v],new ServerProperties(hardcodedServerPorts[v],hardcodedServerNames[v].substring(0,3))));
-        servers.get("FEServer").status=2;
+                .forEach((v) -> servers.put(hardcodedServerNames[v], new ServerProperties(hardcodedServerPorts[v], hardcodedServerNames[v].substring(0, 3))));
+        servers.get("FEServer").status = 2;
         this.pid = pid;
         this.centerName = centerName;
         udpServer = new UDPServer(portNumber, this);
@@ -79,8 +80,8 @@ public class CenterServer {
     // to the members of replica group. Here I don't make any difference if current instance is leader or not,
     // relying on FE to determine who is lead. So basically it will query adjacent servers with "state 1" get their results
     // (confirming that result is returned and is correct), and finally return result to the calling FE
-    public String groupMethodCall(){
-        String result ="";
+    public String groupMethodCall() {
+        String result = "";
         return result;
     }
 
@@ -130,11 +131,11 @@ public class CenterServer {
 
         //generates result querying servers from hardcoded udp ports, as per TA recommendations
 
-        result = IntStream.rangeClosed(0,2).parallel().mapToObj((v) ->
+        result = IntStream.rangeClosed(0, 2).parallel().mapToObj((v) ->
         {
             byte[] getCount = ByteUtility.toByteArray("getCount");
             String result1 = hardcodedServerNames[v] + ":" + UDPClient.request(getCount, hardcodedServerPorts[v]);
-            System.out.printf("\n"+hardcodedServerNames[v]+" on port "+hardcodedServerPorts[v]+" processed\n");
+            System.out.printf("\n" + hardcodedServerNames[v] + " on port " + hardcodedServerPorts[v] + " processed\n");
             return result1;
         }).collect(Collectors.joining(" "));
 
@@ -257,8 +258,8 @@ public class CenterServer {
              using udp to request the function and parse the object to bytes to do the work.
              */
             if (ableToTransfer) {
-                result +=  IntStream.rangeClosed(0,2).filter((v) -> hardcodedServerNames[v].equals(remoteCenterServerName))
-                        .mapToObj((v) -> UDPClient.request(serializedMessage,  hardcodedServerPorts[v])).collect(Collectors.joining());
+                result += IntStream.rangeClosed(0, 2).filter((v) -> hardcodedServerNames[v].equals(remoteCenterServerName))
+                        .mapToObj((v) -> UDPClient.request(serializedMessage, hardcodedServerPorts[v])).collect(Collectors.joining());
 
                 if (toBeModified.remove(transferedRecord)) {
                     result += recordID + " is removed from " + getCenterName();
@@ -285,8 +286,30 @@ public class CenterServer {
     }
 
     //executes election of leader among the replica group members
-    public void bullyElect(){
+    // as of now this implementation won't reattempt victory message in case it's not delivered to FE or
+    // reply of FE is not delivered to the instance
+    public void bullyElect() {
+        byte[] elect = ByteUtility.toByteArray("elect");
+        byte[] victory = ByteUtility.toByteArray("victory");
 
+        if (servers.keySet().stream().parallel()
+                .filter((v) -> servers.get(v).status != 2 && servers.get(v).state == 1 && servers.get(v).pid > this.pid)
+                .count() > 0) {
+            if (servers.keySet().stream().parallel()
+                    .filter((v) -> servers.get(v).status != 2 && servers.get(v).state == 1 && servers.get(v).pid > this.pid)
+                    .map((v) -> UDPClient.request(elect, servers.get(v).udpPort))
+                    .allMatch((v) -> v.equals("no reply"))) {
+                String reply = UDPClient.request(victory, servers.get("FEServer").udpPort);
+                if (reply.equals("leader:" + this.centerName)) {
+                    System.out.printf("This system is the new leader now.\n");
+                }
+            }
+        } else {
+            String reply = UDPClient.request(victory, servers.get("FEServer").udpPort);
+            if (reply.equals("leader:" + this.centerName)) {
+                System.out.printf("This system is the new leader now.\n");
+            }
+        }
     }
 
     public void shutdown() {

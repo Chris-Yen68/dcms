@@ -46,12 +46,20 @@ public class UDPServer implements Runnable {
                         String receiveData = (String) object;
                         System.out.printf(receiveData);
                         if (receiveData.equals("getCount")) {
-                            reply = centerServer.getLocalRecordCount() + "";
-                        } else if (receiveData.substring(0,3).equals("hb-")) {
-                            if(centerServer.servers.get(receiveData.substring(3)) != null){
-                            centerServer.servers.get(receiveData.substring(3)).lastHB=new Date();}
-                            else{
+                            reply += centerServer.getLocalRecordCount();
+                        } else if (receiveData.split(":")[0].equals("hb")) {
+                            if (centerServer.servers.get(receiveData.split(":")[1]) != null) {
+                                centerServer.servers.get(receiveData.split(":")[1]).lastHB = new Date();
+                                centerServer.servers.get(receiveData.split(":")[1]).pid = Integer.parseInt(receiveData.split(":")[2]);
+                            } else {
                                 System.out.println("non-existent server");
+                            }
+                        } else if (receiveData.equals("elect")){
+                            reply = "ok";
+                        } else if (receiveData.split(":")[0].equals("leader")){
+                            // this is questionable, if we need to know who is leader at all. This should be interested only to FE
+                            if(!receiveData.split(":")[1].equals(centerServer.getCenterName())){
+                                centerServer.servers.get(receiveData.split(":")[1]).status=1;
                             }
                         }
                     } else if (object instanceof Records) {

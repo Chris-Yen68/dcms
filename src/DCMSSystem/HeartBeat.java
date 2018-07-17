@@ -8,9 +8,12 @@ import java.util.HashMap;
 public class HeartBeat implements Runnable {
     public HashMap<String, ServerProperties> servers;
 
-    //here I'm using a serverName as a part of hb-* message string, to determine the source of HB.
-    //I'm not sure if we have other means for this, if we run everything on localhost and don't
-    //control our outbound port (that's gonna be too much).
+    /**
+     * here I'm using a serverName as a part of hb-* message string, to determine the source of HB.
+     * I'm not sure if we have other means for this, if we run everything on localhost and don't
+     * control our outbound port (that's gonna be too much).
+     * With HB we spread info about PID of the server.
+    **/
     private String serverName;
     public Boolean isLeader;
 
@@ -34,7 +37,7 @@ public class HeartBeat implements Runnable {
                             } else {
                                 server.status = 1;
                             }
-                            UDPClient.heartbit(serverName, server.hostName, server.udpPort);
+                            UDPClient.heartbit(serverName, server.hostName, server.pid, server.udpPort);
                         });
 
                 Thread.sleep(3000);

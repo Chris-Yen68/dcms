@@ -9,7 +9,11 @@ public class ServerProperties {
     //1 = online, 0 = dead... potentially something else
     public int state;
 
+    public int pid;
+
+
     //1 = leader, 0 = non leader, 2 = FE server, or if you'd like: 1=primary, 0=non primary, 2=front end
+    // it is questionable if we need to know which server is leader on the server side.
     public int status;
 
     public Date lastHB;
