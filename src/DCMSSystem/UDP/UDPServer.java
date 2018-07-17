@@ -58,8 +58,9 @@ public class UDPServer implements Runnable {
                             reply = "ok";
                         } else if (receiveData.split(":")[0].equals("leader")){
                             // this is questionable, if we need to know who is leader at all. This should be interested only to FE
-                            if(!receiveData.split(":")[1].equals(centerServer.getCenterName())){
+                            if(receiveData.split(":")[1].equals(centerServer.getCenterName())){
                                 centerServer.servers.get(receiveData.split(":")[1]).status=1;
+                                centerServer.heartBeat.isLeader = true;
                             }
                         }
                     } else if (object instanceof Records) {

@@ -22,7 +22,7 @@ public class CenterServer {
     private int pid;
     public HashMap<Character, ArrayList<Records>> database = new HashMap<>();
     private UDPServer udpServer;
-    private HeartBeat heartBeat;
+    public HeartBeat heartBeat;
     private final int FEPortNumber = 8150;
     public HashMap<String, ServerProperties> servers = new HashMap<>();
 
@@ -308,6 +308,8 @@ public class CenterServer {
             String reply = UDPClient.request(victory, servers.get("FEServer").udpPort);
             if (reply.equals("leader:" + this.centerName)) {
                 System.out.printf("This system is the new leader now.\n");
+                //this is kinda redundant, decision to keep it or not will be made on tests
+                heartBeat.isLeader=true;
             }
         }
     }
