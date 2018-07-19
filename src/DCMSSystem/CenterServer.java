@@ -49,6 +49,12 @@ public class CenterServer {
                         && !centerName.equals(hardcodedServerNames[v])) || hardcodedServerNames[v].equals("FEServer"))
                 .forEach((v) -> servers.put(hardcodedServerNames[v], new ServerProperties(hardcodedServerPorts[v], hardcodedServerNames[v].substring(0, 3))));
         servers.get("FEServer").status = 2;
+
+        //predefining first instance as the Lead
+        if(servers.get(centerName.substring(0, 3))!= null){
+            servers.get(centerName.substring(0, 3)).status=1;
+        }
+
         this.pid = pid;
         this.centerName = centerName;
         udpServer = new UDPServer(portNumber, this);

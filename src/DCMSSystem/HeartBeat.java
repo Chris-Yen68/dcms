@@ -35,12 +35,12 @@ public class HeartBeat implements Runnable {
                             ServerProperties server = servers.get(v);
                             //TODO: refactor the var name to make it more readable.
                             if (timeNow - server.lastHB.getTime() > 3000) {
-                                if(server.status==2){
+                                if(server.status==1){
                                     centerServer.bullyElect();
                                 }
-                                server.status = 0;
+                                server.state = 0;
                             } else {
-                                server.status = 1;
+                                server.state = 1;
                             }
                             UDPClient.heartbit(centerServer.getCenterName(), server.hostName, server.pid, server.udpPort);
                         });
