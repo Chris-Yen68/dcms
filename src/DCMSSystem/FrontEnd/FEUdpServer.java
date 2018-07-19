@@ -1,6 +1,6 @@
-package DCMSSystem.UDP;
+package DCMSSystem.FrontEnd;
 
-import DCMSSystem.FrontEndImpl;
+import DCMSSystem.FrontEnd.FrontEndImpl;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

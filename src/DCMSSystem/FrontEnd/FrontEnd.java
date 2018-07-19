@@ -1,4 +1,4 @@
-package DCMSSystem;// A server for the Hello object
+package DCMSSystem.FrontEnd;// A server for the Hello object
 
 import DCMSSystem.CenterServerOrb.CenterService;
 import DCMSSystem.CenterServerOrb.CenterServiceHelper;

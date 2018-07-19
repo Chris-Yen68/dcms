@@ -1,6 +1,6 @@
 package DCMSSystem.Servers;
 import DCMSSystem.CenterServer;
-import DCMSSystem.FrontEndImpl;
+import DCMSSystem.FrontEnd.FrontEndImpl;
 
 import java.util.Scanner;
 

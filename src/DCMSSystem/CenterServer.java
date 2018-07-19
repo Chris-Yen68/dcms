@@ -178,7 +178,7 @@ public class CenterServer {
                             return e.getMessage();
                         }
 
-                        //recordPds in this case is the array of properties available in this class
+                        //recordPds in this case is the array of leaders available in this class
                         PropertyDescriptor[] recordPds = recordInfo.getPropertyDescriptors();
                         for (PropertyDescriptor prop : recordPds) {
                             if (prop.getName().equals(fieldName)) {
@@ -255,7 +255,7 @@ public class CenterServer {
             boolean ableToTransfer = isValidatedCenter && has && !centerName.equals(remoteCenterServerName);
             byte[] serializedMessage = ByteUtility.toByteArray(transferedRecord);
             /*
-             using udp to request the function and parse the object to bytes to do the work.
+             using udp to params the function and parse the object to bytes to do the work.
              */
             if (ableToTransfer) {
                 result += IntStream.rangeClosed(0, 2).filter((v) -> hardcodedServerNames[v].equals(remoteCenterServerName))
