@@ -13,6 +13,7 @@ import java.beans.Statement;
 import java.lang.annotation.Native;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -33,6 +34,8 @@ public class CenterServer {
     private Thread udpServerThread;
     private Thread heartBeatThread;
 
+    public Map<String,ServerProperties> leaders;
+
     public CenterServer() {
     }
 
@@ -51,7 +54,7 @@ public class CenterServer {
         udpServer = new UDPServer(portNumber, this);
         udpServerThread = new Thread(udpServer);
         udpServerThread.start();
-        heartBeat = new HeartBeat(servers, centerName);
+        heartBeat = new HeartBeat(servers, this);
         heartBeatThread = new Thread(heartBeat);
         heartBeatThread.start();
     }
@@ -290,7 +293,7 @@ public class CenterServer {
     // reply of FE is not delivered to the instance
     public void bullyElect() {
         byte[] elect = ByteUtility.toByteArray("elect");
-        byte[] victory = ByteUtility.toByteArray("victory");
+        byte[] victory = ByteUtility.toByteArray("victory:"+centerName);
 
         if (servers.keySet().stream().parallel()
                 .filter((v) -> servers.get(v).status != 2 && servers.get(v).state == 1 && servers.get(v).pid > this.pid)
@@ -299,18 +302,18 @@ public class CenterServer {
                     .filter((v) -> servers.get(v).status != 2 && servers.get(v).state == 1 && servers.get(v).pid > this.pid)
                     .map((v) -> UDPClient.request(elect, servers.get(v).udpPort))
                     .allMatch((v) -> v.equals("no reply"))) {
-                String reply = UDPClient.request(victory, servers.get("FEServer").udpPort);
-                if (reply.equals("leader:" + this.centerName)) {
-                    System.out.printf("This system is the new leader now.\n");
-                }
-            }
-        } else {
-            String reply = UDPClient.request(victory, servers.get("FEServer").udpPort);
-            if (reply.equals("leader:" + this.centerName)) {
-                System.out.printf("This system is the new leader now.\n");
-                //this is kinda redundant, decision to keep it or not will be made on tests
+                //when instance hits the case, when no bigger pid around,it declares to everybody including FE its leadership
+                servers.keySet().stream()
+                        .filter((v)->servers.get(v).state==1 || servers.get(v).status==2)
+                        .forEach((v) -> UDPClient.request(victory,servers.get(v).udpPort));
                 heartBeat.isLeader=true;
             }
+        } else {
+            servers.keySet().stream()
+                    .filter((v)->servers.get(v).state==1 || servers.get(v).status==2)
+                    .forEach((v) -> UDPClient.request(victory,servers.get(v).udpPort));
+            heartBeat.isLeader=true;
+
         }
     }
 

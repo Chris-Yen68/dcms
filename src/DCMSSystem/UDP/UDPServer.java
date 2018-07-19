@@ -2,6 +2,7 @@ package DCMSSystem.UDP;
 
 import DCMSSystem.ByteUtility;
 import DCMSSystem.CenterServer;
+import DCMSSystem.FrontEnd.Request;
 import DCMSSystem.Record.Records;
 
 import java.io.IOException;
@@ -54,13 +55,16 @@ public class UDPServer implements Runnable {
                             } else {
                                 System.out.println("non-existent server");
                             }
-                        } else if (receiveData.equals("elect")){
+                        } else if (receiveData.equals("elect")) {
                             reply = "ok";
-                        } else if (receiveData.split(":")[0].equals("leader")){
-                            // this is questionable, if we need to know who is leader at all. This should be interested only to FE
-                            if(receiveData.split(":")[1].equals(centerServer.getCenterName())){
-                                centerServer.servers.get(receiveData.split(":")[1]).status=1;
-                                centerServer.heartBeat.isLeader = true;
+                            centerServer.bullyElect();
+                        } else if (receiveData.split(":")[0].equals("victory")) {
+                            // upon recieval of victory message from some server - we update the status of that server to 1
+                            if (centerServer.servers.get(receiveData.split(":")[1]) != null) {
+                                centerServer.servers.get(receiveData.split(":")[1]).status = 1;
+                                reply = "ok";
+                            } else {
+                                System.out.println("wrong victory message from" + centerServer.servers.get(receiveData.split(":")[1]));
                             }
                         }
                     } else if (object instanceof Records) {
@@ -78,6 +82,12 @@ public class UDPServer implements Runnable {
                             }
                         }
                         reply = record.getRecordID() + " is stored in the " + centerServer.getCenterName() + " | ";
+
+                    } else if (object instanceof Request){
+                        Request inRequest = (Request) object;
+                        if(inRequest.leaders.size()>0){
+                            centerServer.leaders=inRequest.leaders;
+                        }
 
                     }
                     if (reply.length() > 0) {

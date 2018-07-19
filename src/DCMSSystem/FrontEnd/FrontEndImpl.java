@@ -31,7 +31,9 @@ public class FrontEndImpl extends CenterServicePOA {
                     servers.put(hardcodedServerNames[v], new ServerProperties(hardcodedServerPorts[v], hardcodedServerNames[v].substring(0, 3)));
                     if (hardcodedServerPorts[v] >= 8180) {
                         servers.get(hardcodedServerNames[v]).status = 1;
-                    } else if (hardcodedServerPorts[v] >= 8170) {
+                    }
+                    // here I think you don't this branch, last else satisfies both
+                    else if (hardcodedServerPorts[v] >= 8170) {
                         servers.get(hardcodedServerNames[v]).status = 0;
                     } else {
                         servers.get(hardcodedServerNames[v]).status = 0;

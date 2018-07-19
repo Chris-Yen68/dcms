@@ -14,12 +14,12 @@ public class HeartBeat implements Runnable {
      * control our outbound port (that's gonna be too much).
      * With HB we spread info about PID of the server.
     **/
-    private String serverName;
+    private CenterServer centerServer;
     public Boolean isLeader;
 
-    public HeartBeat(HashMap<String, ServerProperties> servers, String serverName) {
+    public HeartBeat(HashMap<String, ServerProperties> servers, CenterServer centerServer) {
         this.servers = servers;
-        this.serverName = serverName;
+        this.centerServer = centerServer;
     }
 
     @Override
@@ -29,16 +29,20 @@ public class HeartBeat implements Runnable {
                 Date dateNow = new Date();
                 long timeNow = dateNow.getTime();
                 servers.keySet().stream()
+                        //means if leader - send HB to everybody, including FE, else - exclude FE
                         .filter(isLeader ? ((v) -> true) : ((v) -> servers.get(v).status != 2))
                         .forEach((v) -> {
                             ServerProperties server = servers.get(v);
                             //TODO: refactor the var name to make it more readable.
                             if (timeNow - server.lastHB.getTime() > 3000) {
+                                if(server.status==2){
+                                    centerServer.bullyElect();
+                                }
                                 server.status = 0;
                             } else {
                                 server.status = 1;
                             }
-                            UDPClient.heartbit(serverName, server.hostName, server.pid, server.udpPort);
+                            UDPClient.heartbit(centerServer.getCenterName(), server.hostName, server.pid, server.udpPort);
                         });
 
                 Thread.sleep(3000);
