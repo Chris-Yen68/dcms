@@ -29,6 +29,7 @@ public class HeartBeat implements Runnable {
                 Date dateNow = new Date();
                 long timeNow = dateNow.getTime();
                 servers.keySet().stream()
+
                         //means if leader - send HB to everybody, including FE, else - exclude FE
                         .filter(isLeader ? ((v) -> true) : ((v) -> servers.get(v).status != 2))
                         .forEach((v) -> {
@@ -36,6 +37,7 @@ public class HeartBeat implements Runnable {
                             //TODO: refactor the var name to make it more readable.
                             if (server.lastHB != null) {
                                 if (timeNow - server.lastHB.getTime() > 3000) {
+                                    System.out.println(v+" is dead");
                                     if (server.status == 1 && server.state != 0) {
                                         System.out.println("Leader is dead, electing...");
                                         centerServer.bullyElect();
