@@ -312,13 +312,6 @@ public class CenterServer {
                     .filter((v) -> servers.get(v).status != 2 && servers.get(v).state == 1 && servers.get(v).pid > this.pid)
                     .map((v) -> UDPClient.request(elect, servers.get(v).udpPort))
                     .allMatch((v) -> v.equals("no reply"))) {
-
-                servers.keySet().stream()
-                        .filter((v) -> servers.get(v).status != 2 && servers.get(v).state == 1 && servers.get(v).pid > this.pid)
-                        .map((v) -> UDPClient.request(elect, servers.get(v).udpPort))
-                        .forEach((v) -> System.out.println(v));
-
-
                 //when instance hits the case, when no bigger pid around,it declares to everybody including FE its leadership
                 System.out.println("nobody replied, turning into Lead\n");
                 servers.keySet().stream()
