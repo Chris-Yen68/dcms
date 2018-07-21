@@ -146,7 +146,7 @@ class CheckHeartbeat implements Runnable {
                 Date dateNow = new Date();
                 long timeNow = dateNow.getTime();
                 for (int i = 0; i < 3; i++) {
-                    if (FrontEndImpl.servers.get(FrontEndImpl.hardcodedServerNames[i]) == null) {
+                    if (FrontEndImpl.servers.get(FrontEndImpl.hardcodedServerNames[i]).lastHB == null) {
                         continue;
                     }
                     long difference = timeNow - FrontEndImpl.servers.get(FrontEndImpl.hardcodedServerNames[i]).lastHB.getTime();

@@ -64,6 +64,12 @@ public class FEUdpServer implements Runnable{
                         byte[] bytes=ByteUtility.toByteArray(leaders);
                         leaders.entrySet().stream()
                                 .forEach(entry->UDPClient.request(bytes,entry.getValue().udpPort));
+
+                        String reply ="ok";
+                        System.out.println("Sending: "+reply);
+                        sendBuffer=reply.getBytes();
+                        DatagramPacket send = new DatagramPacket(sendBuffer, sendBuffer.length, request.getAddress(), request.getPort());
+                        datagramSocket.send(send);
                     }
 
                 } catch (IOException e) {
