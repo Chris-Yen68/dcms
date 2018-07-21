@@ -48,7 +48,7 @@ public class FEUdpServer implements Runnable {
                                 .filter(s->s.getValue().replicaGroup.equals(heartbeat.substring(0,3)))
                                 .forEach(s->s.getValue().state=1);
                         frontEnd.servers.get(heartbeat).lastHB = new Date();
-                        System.out.println("Get hb from" + heartbeat);
+                        System.out.println("Get hb from " + heartbeat);
                     } else {
                         /*
                             Receive election victory info, remove the old leader and set the new leader.

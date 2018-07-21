@@ -149,7 +149,7 @@ class CheckHeartbeat implements Runnable {
                         .filter(s->(s.getValue().status==1)&&(s.getValue().lastHB!=null))
                         .filter(s->(timeNow-s.getValue().lastHB.getTime())/1000>3)
                         .forEach(s->s.getValue().state=0);
-                Thread.sleep(3000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
