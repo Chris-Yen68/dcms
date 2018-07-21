@@ -1,7 +1,8 @@
 package DCMSSystem;
+import java.io.Serializable;
 import java.util.Date;
 
-public class ServerProperties {
+public class ServerProperties implements Serializable {
     public int udpPort;
     //since we are hardocding, we assume we use localhost everywhere
     public final String hostName="localhost";

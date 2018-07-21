@@ -18,7 +18,7 @@ public class FrontEndImpl extends CenterServicePOA {
     public static int[] hardcodedServerPorts = {8180, 8181, 8182, 8170, 8171, 8172, 8160, 8116, 8162};
     public static String[] hardcodedServerNames = {"MTL", "LVL", "DDO", "MTL1", "LVL1", "DDO1", "MTL2", "LVL2", "DDO2"};
     public static HashMap<String, ServerProperties> servers = new HashMap<String, ServerProperties>();
-    public Object lock;
+    public Object lock=new Object();
     private ORB orb;
 
     public void setORB(ORB orb_val) {
@@ -145,15 +145,10 @@ class CheckHeartbeat implements Runnable {
             try {
                 Date dateNow = new Date();
                 long timeNow = dateNow.getTime();
-                for (int i = 0; i < 3; i++) {
-                    if (FrontEndImpl.servers.get(FrontEndImpl.hardcodedServerNames[i]).lastHB == null) {
-                        continue;
-                    }
-                    long difference = timeNow - FrontEndImpl.servers.get(FrontEndImpl.hardcodedServerNames[i]).lastHB.getTime();
-                    if (difference / 1000 > 3) {
-                        FrontEndImpl.servers.get(FrontEndImpl.hardcodedServerNames[i]).state = 0;
-                    }
-                }
+                FrontEndImpl.servers.entrySet().stream()
+                        .filter(s->(s.getValue().status==1)&&(s.getValue().lastHB!=null))
+                        .filter(s->(timeNow-s.getValue().lastHB.getTime())/1000>3)
+                        .forEach(s->s.getValue().state=0);
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
