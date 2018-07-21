@@ -28,15 +28,16 @@ public class UDPServer implements Runnable {
     public void run() {
         try {
             datagramSocket = new DatagramSocket(portNumber);
-            String reply = "";
+
             byte[] buffer = new byte[1024];
             byte[] sendBuffer = new byte[1024];
             while (stop) {
+                String reply = "";
                 DatagramPacket request = new DatagramPacket(buffer, buffer.length);
                 try {
                     Object object = null;
                     datagramSocket.receive(request);
-                    System.out.printf("some data was recevied via udp");
+                    System.out.printf("some data was recevied via udp\n");
                     try {
                         object = ByteUtility.toObject(request.getData());
 
@@ -45,19 +46,26 @@ public class UDPServer implements Runnable {
                     }
                     if (object instanceof String) {
                         String receiveData = (String) object;
-                        System.out.printf(receiveData);
+                        System.out.println(object.toString());
                         if (receiveData.equals("getCount")) {
                             reply += centerServer.getLocalRecordCount();
-                        } else if (receiveData.split(":")[0].equals("hb")) {
-                            if (centerServer.servers.get(receiveData.split(":")[1]) != null) {
-                                centerServer.servers.get(receiveData.split(":")[1]).lastHB = new Date();
-                                centerServer.servers.get(receiveData.split(":")[1]).pid = Integer.parseInt(receiveData.split(":")[2]);
+                        }
+                        else if (receiveData.equals("getCountt")){
+                            System.out.println("it works somehow");
+                        }
+
+                        else if (receiveData.substring(0,2).equals("hb")) {
+                            String[] hb = receiveData.split(":");
+                            if (centerServer.servers.get(hb[1]) != null) {
+                                centerServer.servers.get(hb[1]).lastHB = new Date();
+                                centerServer.servers.get(hb[1]).pid = Integer.parseInt(hb[2]);
                             } else {
-                                System.out.println("non-existent server");
+                                System.out.println("non-existent server\n");
                             }
                         } else if (receiveData.equals("elect")) {
+                            System.out.println("incoming elect\n");
                             reply = "ok";
-                            centerServer.bullyElect();
+                            //centerServer.bullyElect();
                         } else if (receiveData.split(":")[0].equals("victory")) {
                             // upon recieval of victory message from some server - we update the status of that server to 1
                             if (centerServer.servers.get(receiveData.split(":")[1]) != null) {
@@ -92,6 +100,7 @@ public class UDPServer implements Runnable {
                     }
                     if (reply.length() > 0) {
                         sendBuffer = reply.getBytes();
+                        System.out.println("Sending: "+reply);
                         DatagramPacket send = new DatagramPacket(sendBuffer, sendBuffer.length, request.getAddress(), request.getPort());
                         datagramSocket.send(send);
                     }

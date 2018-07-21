@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 public class CenterServer {
 
     private String centerName;
-    private int pid;
+    public int pid;
     public HashMap<Character, ArrayList<Records>> database = new HashMap<>();
     private UDPServer udpServer;
     public HeartBeat heartBeat;
@@ -34,7 +34,7 @@ public class CenterServer {
     private Thread udpServerThread;
     private Thread heartBeatThread;
 
-    public Map<String,ServerProperties> leaders;
+    public Map<String, ServerProperties> leaders;
 
     public CenterServer() {
     }
@@ -44,15 +44,16 @@ public class CenterServer {
         super();
         //form the list of hardcoded servers in the replica group except current one.
         //as a result there should be address map with 2 adjacent servers from the same replica group and frontend server.
-        IntStream.rangeClosed(0, 8)
+        IntStream.rangeClosed(0, 9)
                 .filter((v) -> (centerName.substring(0, 3).equals(hardcodedServerNames[v].substring(0, 3))
                         && !centerName.equals(hardcodedServerNames[v])) || hardcodedServerNames[v].equals("FEServer"))
                 .forEach((v) -> servers.put(hardcodedServerNames[v], new ServerProperties(hardcodedServerPorts[v], hardcodedServerNames[v].substring(0, 3))));
+        System.out.println(servers.keySet().toString());
         servers.get("FEServer").status = 2;
 
         //predefining first instance as the Lead
-        if(servers.get(centerName.substring(0, 3))!= null){
-            servers.get(centerName.substring(0, 3)).status=1;
+        if (servers.get(centerName.substring(0, 3)) != null) {
+            servers.get(centerName.substring(0, 3)).status = 1;
         }
 
         this.pid = pid;
@@ -62,6 +63,9 @@ public class CenterServer {
         udpServerThread.start();
         heartBeat = new HeartBeat(servers, this);
         heartBeatThread = new Thread(heartBeat);
+        if (centerName.length() == 3) {
+            heartBeat.isLeader = true;
+        }
         heartBeatThread.start();
     }
 
@@ -299,26 +303,34 @@ public class CenterServer {
     // reply of FE is not delivered to the instance
     public void bullyElect() {
         byte[] elect = ByteUtility.toByteArray("elect");
-        byte[] victory = ByteUtility.toByteArray("victory:"+centerName);
+        byte[] victory = ByteUtility.toByteArray("victory:" + centerName);
 
         if (servers.keySet().stream().parallel()
                 .filter((v) -> servers.get(v).status != 2 && servers.get(v).state == 1 && servers.get(v).pid > this.pid)
                 .count() > 0) {
-            if (servers.keySet().stream().parallel()
+            if (servers.keySet().stream()
                     .filter((v) -> servers.get(v).status != 2 && servers.get(v).state == 1 && servers.get(v).pid > this.pid)
                     .map((v) -> UDPClient.request(elect, servers.get(v).udpPort))
                     .allMatch((v) -> v.equals("no reply"))) {
-                //when instance hits the case, when no bigger pid around,it declares to everybody including FE its leadership
+
                 servers.keySet().stream()
-                        .filter((v)->servers.get(v).state==1 || servers.get(v).status==2)
-                        .forEach((v) -> UDPClient.request(victory,servers.get(v).udpPort));
-                heartBeat.isLeader=true;
+                        .filter((v) -> servers.get(v).status != 2 && servers.get(v).state == 1 && servers.get(v).pid > this.pid)
+                        .map((v) -> UDPClient.request(elect, servers.get(v).udpPort))
+                        .forEach((v) -> System.out.println(v));
+
+
+                //when instance hits the case, when no bigger pid around,it declares to everybody including FE its leadership
+                System.out.println("nobody replied, turning into Lead\n");
+                servers.keySet().stream()
+                        .filter((v) -> servers.get(v).state == 1 || servers.get(v).status == 2)
+                        .forEach((v) -> UDPClient.request(victory, servers.get(v).udpPort));
+                heartBeat.isLeader = true;
             }
         } else {
             servers.keySet().stream()
-                    .filter((v)->servers.get(v).state==1 || servers.get(v).status==2)
-                    .forEach((v) -> UDPClient.request(victory,servers.get(v).udpPort));
-            heartBeat.isLeader=true;
+                    .filter((v) -> servers.get(v).state == 1 || servers.get(v).status == 2)
+                    .forEach((v) -> UDPClient.request(victory, servers.get(v).udpPort));
+            heartBeat.isLeader = true;
 
         }
     }

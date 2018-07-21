@@ -2,6 +2,7 @@ package DCMSSystem.Servers;
 
 import DCMSSystem.CenterServer;
 
+import java.lang.management.ManagementFactory;
 import java.util.Scanner;
 
 public class MTL1Server {
@@ -9,7 +10,8 @@ public class MTL1Server {
     public static void main(String args[]) throws Exception {
         //Some hardcoded parameters
         String serverName = "MTL1";
-        int pid = Integer.parseInt(java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+        int pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+        System.out.println("this server PID: "+pid);
         //Some objects creation
         CenterServer server = new CenterServer(serverName, 8170, pid);
         System.out.println(serverName + " is launched");

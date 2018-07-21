@@ -1,5 +1,7 @@
 package DCMSSystem.UDP;
 
+import DCMSSystem.ByteUtility;
+
 import java.io.IOException;
 import java.net.*;
 
@@ -75,14 +77,17 @@ public class UDPClient {
     public static void heartbit (String sourceServer, String hostname, int pid, int port){
         DatagramSocket datagramSocket = null;
         String hb = "hb:"+sourceServer+":"+pid;
+
         try {
 
             datagramSocket = new DatagramSocket();
             InetAddress inetAddress = InetAddress.getByName(hostname);
-            byte[] hbBytes = hb.getBytes();
-            DatagramPacket datagramPacket = new DatagramPacket(hbBytes,hb.length(),inetAddress,port);
+            byte[] hbBytes = ByteUtility.toByteArray(hb);
+
+            DatagramPacket datagramPacket = new DatagramPacket(hbBytes,hbBytes.length,inetAddress,port);
             datagramSocket.send(datagramPacket);
             datagramSocket.close();
+            System.out.println("hb "+pid+" sent to "+hostname+":"+port);
         } catch (Exception e){
             e.printStackTrace();
         } finally {

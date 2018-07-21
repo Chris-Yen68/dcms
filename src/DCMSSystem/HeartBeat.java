@@ -13,9 +13,9 @@ public class HeartBeat implements Runnable {
      * I'm not sure if we have other means for this, if we run everything on localhost and don't
      * control our outbound port (that's gonna be too much).
      * With HB we spread info about PID of the server.
-    **/
+     **/
     private CenterServer centerServer;
-    public Boolean isLeader;
+    public Boolean isLeader = false;
 
     public HeartBeat(HashMap<String, ServerProperties> servers, CenterServer centerServer) {
         this.servers = servers;
@@ -34,15 +34,18 @@ public class HeartBeat implements Runnable {
                         .forEach((v) -> {
                             ServerProperties server = servers.get(v);
                             //TODO: refactor the var name to make it more readable.
-                            if (timeNow - server.lastHB.getTime() > 3000) {
-                                if(server.status==1){
-                                    centerServer.bullyElect();
+                            if (server.lastHB != null) {
+                                if (timeNow - server.lastHB.getTime() > 3000) {
+                                    if (server.status == 1 && server.state != 0) {
+                                        System.out.println("Leader is dead, electing...");
+                                        centerServer.bullyElect();
+                                    }
+                                    server.state = 0;
+                                } else {
+                                    server.state = 1;
                                 }
-                                server.state = 0;
-                            } else {
-                                server.state = 1;
                             }
-                            UDPClient.heartbit(centerServer.getCenterName(), server.hostName, server.pid, server.udpPort);
+                            UDPClient.heartbit(centerServer.getCenterName(), server.hostName, centerServer.pid, server.udpPort);
                         });
 
                 Thread.sleep(3000);

@@ -2,6 +2,7 @@ package DCMSSystem.Servers;
 import DCMSSystem.CenterServer;
 import DCMSSystem.FrontEnd.FrontEndImpl;
 
+import java.lang.management.ManagementFactory;
 import java.util.Scanner;
 
 public class MTLServer {
@@ -9,11 +10,14 @@ public class MTLServer {
     public static void main(String args[]) throws Exception {
         //Some hardcoded parameters
         String serverName = "MTL";
-        int pid = Integer.parseInt(java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
-        //Some objects creation
+
+        int pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+        System.out.println(pid);
+
+        System.out.println("this server PID: "+pid);
         CenterServer server = new CenterServer(serverName, 8180, pid);
-        FrontEndImpl.servers.get(serverName).pid=pid;
-        FrontEndImpl.servers.get(serverName).state=1;
+//        FrontEndImpl.servers.get(serverName).pid=pid;
+//        FrontEndImpl.servers.get(serverName).state=1;
         System.out.println(serverName+" is launched");
         System.out.println("input s to shut down!");
         Scanner scanner = new Scanner(System.in);
