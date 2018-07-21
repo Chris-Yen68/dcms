@@ -31,16 +31,12 @@ public class FrontEndImpl extends CenterServicePOA {
                     servers.put(hardcodedServerNames[v], new ServerProperties(hardcodedServerPorts[v], hardcodedServerNames[v].substring(0, 3)));
                     if (hardcodedServerPorts[v] >= 8180) {
                         servers.get(hardcodedServerNames[v]).status = 1;
-                    }
-                    // here I think you don't this branch, last else satisfies both
-                    else if (hardcodedServerPorts[v] >= 8170) {
-                        servers.get(hardcodedServerNames[v]).status = 0;
                     } else {
                         servers.get(hardcodedServerNames[v]).status = 0;
                     }
                 });
         CheckHeartbeat scheduler = new CheckHeartbeat();
-        new Thread(new FEUdpServer(8150, this)).start();
+        new Thread(new FEUdpServer(8190, this)).start();
         new Thread(scheduler).start();
     }
 
@@ -154,11 +150,11 @@ class CheckHeartbeat implements Runnable {
                         continue;
                     }
                     long difference = timeNow - FrontEndImpl.servers.get(FrontEndImpl.hardcodedServerNames[i]).lastHB.getTime();
-                    if (difference / 1000 > 5) {
+                    if (difference / 1000 > 3) {
                         FrontEndImpl.servers.get(FrontEndImpl.hardcodedServerNames[i]).state = 0;
                     }
                 }
-                Thread.sleep(5000);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
