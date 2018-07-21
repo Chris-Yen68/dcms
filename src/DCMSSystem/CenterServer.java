@@ -28,7 +28,7 @@ public class CenterServer {
     public HashMap<String, ServerProperties> servers = new HashMap<>();
 
     // desired by TA solution of udp address/port hardcoding, since we hardcoding everything,
-    public static int[] hardcodedServerPorts = {8180, 8181, 8182, 8170, 8171, 8172, 8160, 8116, 8162, 8190};
+    public static int[] hardcodedServerPorts = {8180, 8181, 8182, 8170, 8171, 8172, 8160, 8161, 8162, 8190};
     public static String[] hardcodedServerNames = {"MTL", "LVL", "DDO", "MTL1", "LVL1", "DDO1", "MTL2", "LVL2", "DDO2", "FEServer"};
 
     private Thread udpServerThread;
@@ -327,6 +327,7 @@ public class CenterServer {
                 heartBeat.isLeader = true;
             }
         } else {
+            System.out.println("Seems nobody alive bigger then me, turning into lead\n");
             servers.keySet().stream()
                     .filter((v) -> servers.get(v).state == 1 || servers.get(v).status == 2)
                     .forEach((v) -> UDPClient.request(victory, servers.get(v).udpPort));
