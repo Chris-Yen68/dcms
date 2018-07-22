@@ -12,6 +12,7 @@ import java.beans.PropertyDescriptor;
 import java.beans.Statement;
 import java.lang.annotation.Native;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -245,6 +246,22 @@ public class CenterServer {
                                     } catch (Exception e) {
                                         return e.getMessage();
                                     }
+                                    //TODO: it's a bit dumb implementation, can be enhanced with "rollback"
+                                    if (isLeader){
+                                        servers.keySet().stream()
+                                                .filter(v -> servers.get(v).state==1)
+                                                .forEach(v -> {
+                                                    HashMap<String, String> params = new HashMap<String, String>();
+                                                    params.put("operation", "editRecord");
+                                                    params.put("managerId", managerId);
+                                                    params.put("recordID", recordID);
+                                                    params.put("fieldName", fieldName);
+                                                    params.put("newValue", newValue);
+                                                    byte[] serializedRequest = ByteUtility.toByteArray(params);
+                                                    UDPClient.request(serializedRequest,servers.get(v).udpPort);
+                                                });
+                                    }
+
                                     result = "Record updated";
 
                                     String operation = "edit: " + prop.getName();
