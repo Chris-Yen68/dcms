@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 public class CenterServer {
 
     private String centerName;
-    public int pid;
+
     public HashMap<Character, ArrayList<Records>> database = new HashMap<>();
     private UDPServer udpServer;
     public HeartBeat heartBeat;
@@ -34,6 +34,10 @@ public class CenterServer {
     private Thread udpServerThread;
     private Thread heartBeatThread;
 
+
+    public int pid;
+    public int version;
+    public Boolean isLeader = false;
     public Map<String, ServerProperties> leaders;
 
     public CenterServer() {
@@ -64,7 +68,7 @@ public class CenterServer {
         heartBeat = new HeartBeat(servers, this);
         heartBeatThread = new Thread(heartBeat);
         if (centerName.length() == 3) {
-            heartBeat.isLeader = true;
+            isLeader = true;
         }
         heartBeatThread.start();
     }
@@ -89,69 +93,106 @@ public class CenterServer {
         }
     }
 
-    // this is going to be a FIFO method caller, which will iterate through servers hashMap and send calls via udp
-    // to the members of replica group. Here I don't make any difference if current instance is leader or not,
-    // relying on FE to determine who is lead. So basically it will query adjacent servers with "state 1" get their results
-    // (confirming that result is returned and is correct), and finally return result to the calling FE
-    public String groupMethodCall() {
-        String result = "";
-        return result;
+    public void removeRecord(String recordId) {
+        synchronized (database) {
+            char key = recordId.charAt(0);
+            database.get(key).stream().filter(v -> v.getRecordID().equals(recordId))
+                    .forEach(v -> database.get(key).remove(v));
+        }
     }
 
     public String createTRecord(String managerId, String firstName, String lastName, String address, String phone, String specialization, String location) {
-        TeacherRecord teacherRecord = new TeacherRecord(firstName, lastName, address, phone, specialization, location);
-        char key = lastName.charAt(0);
-        synchronized (database) {
-            validateRecordId(teacherRecord, key);
-            if (database.get(key) == null) {
-                ArrayList<Records> value = new ArrayList<>();
-                value.add(teacherRecord);
-                database.put(key, value);
-            } else {
-                ArrayList<Records> value = database.get(key);
-                value.add(teacherRecord);
-                database.put(key, value);
+        if (isLeader) {
+
+            TeacherRecord teacherRecord = new TeacherRecord(firstName, lastName, address, phone, specialization, location);
+            char key = lastName.charAt(0);
+            synchronized (database) {
+                validateRecordId(teacherRecord, key);
+                if (database.get(key) == null) {
+                    ArrayList<Records> value = new ArrayList<>();
+                    value.add(teacherRecord);
+                    database.put(key, value);
+                } else {
+                    ArrayList<Records> value = database.get(key);
+                    value.add(teacherRecord);
+                    database.put(key, value);
+                }
             }
+            Log.log(Log.getCurrentTime(), managerId, "createTRecord", "Create successfully! Record ID is " + teacherRecord.getRecordID());
+            byte[] serializedRecord = ByteUtility.toByteArray(teacherRecord);
+            byte[] rollbackRecord = ByteUtility.toByteArray("rollback:" + teacherRecord.getRecordID());
+
+            if (servers.entrySet().stream().filter(v -> v.getValue().state == 1)
+                    .map(v -> UDPClient.request(serializedRecord, v.getValue().udpPort))
+                    .allMatch(v -> v.substring(0, 11).equals("Transfer ok"))) {
+                return teacherRecord.getRecordID() + " is created";
+            } else {
+                //some rollback implementation.
+                database.remove(teacherRecord.getRecordID());
+                servers.entrySet().stream().filter(v -> v.getValue().state == 1)
+                        .forEach(v -> UDPClient.request(rollbackRecord, v.getValue().udpPort));
+                return "fail during execution, rolled back";
+            }
+        } else {
+            return "cannot execute, must be a leader";
         }
-        Log.log(Log.getCurrentTime(), managerId, "createTRecord", "Create successfully! Record ID is " + teacherRecord.getRecordID());
-        return teacherRecord.getRecordID();
     }
 
     public String createSRecord(String managerId, String firstName, String lastName, String[] courseRegistered, String status, String statusDate) {
-        StudentRecord studentRecord = new StudentRecord(firstName, lastName, courseRegistered, status, statusDate);
-        char key = lastName.charAt(0);
-        synchronized (database) {
-            validateRecordId(studentRecord, key);
-            if (database.get(key) == null) {
-                ArrayList<Records> value = new ArrayList<>();
-                value.add(studentRecord);
-                database.put(key, value);
-            } else {
-                ArrayList<Records> value = database.get(key);
-                value.add(studentRecord);
-                database.put(key, value);
+        if (isLeader) {
+            StudentRecord studentRecord = new StudentRecord(firstName, lastName, courseRegistered, status, statusDate);
+            char key = lastName.charAt(0);
+            synchronized (database) {
+                validateRecordId(studentRecord, key);
+                if (database.get(key) == null) {
+                    ArrayList<Records> value = new ArrayList<>();
+                    value.add(studentRecord);
+                    database.put(key, value);
+                } else {
+                    ArrayList<Records> value = database.get(key);
+                    value.add(studentRecord);
+                    database.put(key, value);
+                }
             }
+            Log.log(Log.getCurrentTime(), managerId, "createSRecord", "Create successfully! Record ID is " + studentRecord.getRecordID());
+            //return studentRecord.getRecordID();
+            byte[] serializedRecord = ByteUtility.toByteArray(studentRecord);
+            byte[] rollbackRecord = ByteUtility.toByteArray("rollback:" + studentRecord.getRecordID());
+
+            if (servers.entrySet().stream().filter(v -> v.getValue().state == 1)
+                    .map(v -> UDPClient.request(serializedRecord, v.getValue().udpPort))
+                    .allMatch(v -> v.substring(0, 11).equals("Transfer ok"))) {
+                return studentRecord.getRecordID() + " is created";
+            } else {
+                //some rollback implementation.
+                database.remove(studentRecord.getRecordID());
+                servers.entrySet().stream().filter(v -> v.getValue().state == 1)
+                        .forEach(v -> UDPClient.request(rollbackRecord, v.getValue().udpPort));
+                return "fail during execution, rolled back";
+            }
+        } else {
+            return "cannot execute, must be a leader";
         }
-        Log.log(Log.getCurrentTime(), managerId, "createSRecord", "Create successfully! Record ID is " + studentRecord.getRecordID());
-        return studentRecord.getRecordID();
+
     }
 
     /*
       Concurrent implementation of getRecordCounts using Java8 parallel streams.
     */
     public String getRecordCounts(String managerId) {
+
         String result;
-
-        //generates result querying servers from hardcoded udp ports, as per TA recommendations
-
-        result = IntStream.rangeClosed(0, 2).parallel().mapToObj((v) ->
-        {
-            byte[] getCount = ByteUtility.toByteArray("getCount");
-            String result1 = hardcodedServerNames[v] + ":" + UDPClient.request(getCount, hardcodedServerPorts[v]);
-            System.out.printf("\n" + hardcodedServerNames[v] + " on port " + hardcodedServerPorts[v] + " processed\n");
-            return result1;
-        }).collect(Collectors.joining(" "));
-
+        //generates result querying servers from leaders list
+        result = leaders.keySet().stream().parallel()
+                .filter(v -> !v.equals(centerName))
+                .map(v ->
+                        {
+                            byte[] getCount = ByteUtility.toByteArray("getCount");
+                            String result1 = v + ":" + UDPClient.request(getCount, servers.get(v).udpPort);
+                            return result1;
+                        }
+                )
+                .collect(Collectors.joining(" "));
         System.out.printf("\n" + result);
         Log.log(Log.getCurrentTime(), managerId, "getRecordCounts", "Successful");
         return result;
@@ -173,7 +214,9 @@ public class CenterServer {
       Edits record using java reflection, to dynamically get the object class (either Student or Teacher) and editable attributes.
     */
 
-
+    /*TODO: in the same way as others this method should be modified to support operation as leader, which calls other servers in group
+    additionally to regular mode. see landRecord method
+     */
     public String editRecord(String managerId, String recordID, String fieldName, String newValue) {
         String result = "";
         Boolean ableModified = true;
@@ -183,31 +226,17 @@ public class CenterServer {
             for (char key : database.keySet()) {
                 for (Records record : database.get(key)) {
                     if (record.getRecordID().equals(recordID)) {
-
-                        // following reads information about the object, more precisely of its class, into BeanInfo
                         try {
                             recordInfo = Introspector.getBeanInfo(record.getClass());
                         } catch (Exception e) {
                             return e.getMessage();
                         }
-
-                        //recordPds in this case is the array of leaders available in this class
                         PropertyDescriptor[] recordPds = recordInfo.getPropertyDescriptors();
                         for (PropertyDescriptor prop : recordPds) {
                             if (prop.getName().equals(fieldName)) {
                                 if (fieldName.equals("location")) {
                                     ableModified = newValue.equals("MTL") || newValue.equals("LVL") || newValue.equals("DDO");
                                 }
-                            /*
-                            Here we form the statement to execute, in our case, update the field in the object.
-                            We rely on property names captured in previous recordPds. There is no need in explicit definition
-                            of particular Student of TeacherRecord class, since we can just analyze whatever record found
-                            with recordId.
-                            prop.getWriteMethod() looks for method which writes to property, which was filtered with previous
-                            prop.getName().equals(fieldName). As a result newValue is passed as argument to method found, hopefully,
-                            it is the proper setter in the end.
-                            * look into java reflection and java beans library.
-                             */
                                 if (ableModified) {
 
                                     Statement stmt = new Statement(record, prop.getWriteMethod().getName(), new java.lang.Object[]{newValue});
@@ -246,6 +275,7 @@ public class CenterServer {
     /*
        transfer record from the server associated with manager if it is verified to the remotecenter which is given by name
     */
+    //TODO:refactor the flow of validations, too heavy.
     public String transferRecord(String managerID, String recordID, String remoteCenterServerName) {
         String result = "";
         boolean has = false;
@@ -271,13 +301,13 @@ public class CenterServer {
              using udp to params the function and parse the object to bytes to do the work.
              */
             if (ableToTransfer) {
-                result += IntStream.rangeClosed(0, 2).filter((v) -> hardcodedServerNames[v].equals(remoteCenterServerName))
-                        .mapToObj((v) -> UDPClient.request(serializedMessage, hardcodedServerPorts[v])).collect(Collectors.joining());
-
-                if (toBeModified.remove(transferedRecord)) {
-                    result += recordID + " is removed from " + getCenterName();
+                if (leaders.keySet().stream()
+                        .filter(v -> v.equals(remoteCenterServerName))
+                        .map(v -> UDPClient.request(serializedMessage, servers.get(v).udpPort))
+                        .allMatch(v -> v.substring(0, 11).equals("Transfer ok"))) {
+                    toBeModified.remove(transferedRecord);
+                    result = recordID + " is transfered to " + remoteCenterServerName;
                 }
-
                 Log.log(Log.getCurrentTime(), managerID, "transferRecord:" + recordID, result);
 
             } else {
@@ -298,6 +328,41 @@ public class CenterServer {
         return result;
     }
 
+
+    //manipulates with local records.
+    public String landRecord(Records record) {
+        synchronized (database) {
+            if (database.get(record.getLastName().charAt(0)) != null) {
+                database.get(record.getLastName().charAt(0)).add(record);
+
+            } else {
+                ArrayList<Records> newArray = new ArrayList<>();
+                newArray.add(record);
+                database.put(record.getLastName().charAt(0), newArray);
+                System.out.println(record.getRecordID());
+            }
+            if (isLeader) {
+                byte[] serializedRecord = ByteUtility.toByteArray(record);
+                byte[] rollbackRecord = ByteUtility.toByteArray("rollback:" + record.getRecordID());
+
+                if (servers.entrySet().stream().filter(v -> v.getValue().state == 1)
+                        .map(v -> UDPClient.request(serializedRecord, v.getValue().udpPort))
+                        .allMatch(v -> v.substring(0, 11).equals("Transfer ok"))) {
+                    return "Transfer ok: " + record.getRecordID() + " to " + centerName;
+                } else {
+                    //some rollback implementation.
+                    database.remove(record.getRecordID());
+                    servers.entrySet().stream().filter(v -> v.getValue().state == 1)
+                            .forEach(v -> UDPClient.request(rollbackRecord, v.getValue().udpPort));
+                    return "fail during execution, rolled back";
+                }
+            } else {
+                return "Transfer ok: " + record.getRecordID() + " to " + centerName;
+            }
+        }
+    }
+
+
     //executes election of leader among the replica group members
     // as of now this implementation won't reattempt victory message in case it's not delivered to FE or
     // reply of FE is not delivered to the instance
@@ -317,14 +382,14 @@ public class CenterServer {
                 servers.keySet().stream()
                         .filter((v) -> servers.get(v).state == 1 || servers.get(v).status == 2)
                         .forEach((v) -> UDPClient.request(victory, servers.get(v).udpPort));
-                heartBeat.isLeader = true;
+                isLeader = true;
             }
         } else {
             System.out.println("Seems nobody alive bigger then me, turning into lead\n");
             servers.keySet().stream()
                     .filter((v) -> servers.get(v).state == 1 || servers.get(v).status == 2)
                     .forEach((v) -> UDPClient.request(victory, servers.get(v).udpPort));
-            heartBeat.isLeader = true;
+            isLeader = true;
 
         }
     }

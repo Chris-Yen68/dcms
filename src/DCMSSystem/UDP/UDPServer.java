@@ -74,29 +74,20 @@ public class UDPServer implements Runnable {
                             } else {
                                 System.out.println("wrong victory message from" + centerServer.servers.get(receiveData.split(":")[1]));
                             }
+                        } else if (receiveData.split(":")[0].equals("rollback")){
+                            centerServer.removeRecord(receiveData.split(":")[1]);
+                            reply = "ok";
                         }
                     } else if (object instanceof Records) {
                         Records record = (Records) object;
-                        HashMap<Character, ArrayList<Records>> centerdata = centerServer.database;
-                        synchronized (centerdata) {
-                            if (centerdata.get(record.getLastName().charAt(0)) != null) {
-                                centerdata.get(record.getLastName().charAt(0)).add(record);
-
-                            } else {
-                                ArrayList<Records> newArray = new ArrayList<>();
-                                newArray.add(record);
-                                centerdata.put(record.getLastName().charAt(0), newArray);
-                                System.out.println(record.getRecordID());
-                            }
-                        }
-                        reply = record.getRecordID() + " is stored in the " + centerServer.getCenterName() + " | ";
-
+                        reply = centerServer.landRecord(record);
                     } else if (object instanceof Request){
                         Request inRequest = (Request) object;
                         if(inRequest.leaders.size()>0){
                             centerServer.leaders=inRequest.leaders;
+                        } else{
+                            //TODO: describe method calls from hashmap with params
                         }
-
                     }
                     if (reply.length() > 0) {
                         sendBuffer = reply.getBytes();
