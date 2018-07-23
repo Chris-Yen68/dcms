@@ -57,23 +57,9 @@ public class InteractonClient {
                 System.out.println("ManagerId error. Please input again");
                 continue;
             }
-            switch (managerId.substring(0, 3)) {
-                case "MTL": {
-                    service = CenterServiceHelper.narrow(ncRef.resolve_str("MTL"));
-                    ifContinue = processOperation(service,managerId);
-                    break;
-                }
-                case "LVL": {
-                    service = CenterServiceHelper.narrow(ncRef.resolve_str("LVL"));
-                    ifContinue = processOperation(service,managerId);
-                    break;
-                }
-                case "DDO": {
-                    service = CenterServiceHelper.narrow(ncRef.resolve_str("DDO"));
-                    ifContinue = processOperation(service,managerId);
-                    break;
-                }
-            }
+            service = CenterServiceHelper.narrow(ncRef.resolve_str("FrontEndImpl"));
+            ifContinue = processOperation(service,managerId);
+
         } while (ifContinue);
     }
 
