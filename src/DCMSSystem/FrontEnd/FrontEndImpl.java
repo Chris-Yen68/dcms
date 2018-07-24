@@ -180,6 +180,10 @@ public class FrontEndImpl extends CenterServicePOA {
                 .map(s -> s.getValue())
                 .findFirst().get();
         String result = "";
+        /*
+            First do(){}while loop means that FE will send request again if udp client doesn't receive reply.
+            The second do(){}while loop means that FE will wait a new leader generated when the current leader dead.
+         */
         do {
             if (destination.state == 0) {
                 do {
