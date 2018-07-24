@@ -7,11 +7,14 @@ import DCMSSystem.ServerProperties;
 import DCMSSystem.UDP.UDPClient;
 import org.omg.CORBA.ORB;
 
+import javax.swing.text.html.Option;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -52,7 +55,17 @@ public class FrontEndImpl extends CenterServicePOA {
         params.put("phone", phone);
         params.put("specialization", specialization);
         params.put("location", location);
-        return udpSender(new Request(params));
+        CompletableFuture<String> future = CompletableFuture
+                .supplyAsync(()->udpSender(new Request(params)));
+        String result="";
+        try {
+            result=future.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     @Override
@@ -70,7 +83,17 @@ public class FrontEndImpl extends CenterServicePOA {
             stringBuilder.append(s + " ");
         }
         params.put("courseRegistered", stringBuilder.toString());
-        return udpSender(new Request(params));
+        CompletableFuture<String> future = CompletableFuture
+                .supplyAsync(()->udpSender(new Request(params)));
+        String result="";
+        try {
+            result=future.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     @Override
@@ -82,7 +105,17 @@ public class FrontEndImpl extends CenterServicePOA {
                 .stream()
                 .filter((s) -> s.getValue().status == 1)
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-        return udpSender(new Request(leaders, params));
+        CompletableFuture<String> future = CompletableFuture
+                .supplyAsync(()->udpSender(new Request(params)));
+        String result="";
+        try {
+            result=future.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     @Override
@@ -93,7 +126,17 @@ public class FrontEndImpl extends CenterServicePOA {
         params.put("recordID", recordID);
         params.put("fieldName", fieldName);
         params.put("newValue", newValue);
-        return udpSender(new Request(params));
+        CompletableFuture<String> future = CompletableFuture
+                .supplyAsync(()->udpSender(new Request(params)));
+        String result="";
+        try {
+            result=future.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     @Override
@@ -107,7 +150,17 @@ public class FrontEndImpl extends CenterServicePOA {
                 .stream()
                 .filter((s) -> (s.getValue().status == 1) && (s.getKey().equals(remoteCenterServerName)))
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-        return udpSender(new Request(leaders, params));
+        CompletableFuture<String> future = CompletableFuture
+                .supplyAsync(()->udpSender(new Request(params)));
+        String result="";
+        try {
+            result=future.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     @Override
@@ -129,9 +182,9 @@ public class FrontEndImpl extends CenterServicePOA {
         String result = "";
         do {
             if (destination.state == 0) {
-                synchronized (lock) {
+                do {
                     try {
-                        lock.wait();
+                        Thread.sleep(3000);
                         destination = servers.entrySet()
                                 .stream()
                                 .filter(s -> (s.getKey().substring(0, 3).equals(serverName))
@@ -141,7 +194,7 @@ public class FrontEndImpl extends CenterServicePOA {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                }
+                }while (destination.state==0);
             }
             result = UDPClient.request(serializedRequest, destination.udpPort);
         } while (result.equals("no reply"));

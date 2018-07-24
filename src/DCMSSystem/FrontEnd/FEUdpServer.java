@@ -60,9 +60,6 @@ public class FEUdpServer implements Runnable {
                                 .filter(s -> (s.getValue().status == 1) && (s.getValue().state == 0) && (s.getValue().replicaGroup.equals(victory.substring(0, 3))))
                                 .findFirst().get().getKey();
                         frontEnd.servers.remove(oldLeader);
-                        synchronized (frontEnd.lock) {
-                            frontEnd.lock.notify();
-                        }
                         /*
                             Broadcast updated leaders info to each leader.
                          */
