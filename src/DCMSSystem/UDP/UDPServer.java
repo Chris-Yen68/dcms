@@ -12,6 +12,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 
 public class UDPServer implements Runnable {
     private int portNumber;
@@ -30,9 +31,9 @@ public class UDPServer implements Runnable {
             datagramSocket = new DatagramSocket(portNumber);
 
             byte[] buffer = new byte[1024];
-            byte[] sendBuffer = new byte[1024];
+
             while (stop) {
-                String reply = "";
+                CompletableFuture<String> reply=CompletableFuture.supplyAsync(() -> "");
                 DatagramPacket request = new DatagramPacket(buffer, buffer.length);
                 try {
                     Object object = null;
@@ -48,13 +49,10 @@ public class UDPServer implements Runnable {
                         String receiveData = (String) object;
                         System.out.println(object.toString());
                         if (receiveData.equals("getCount")) {
-                            reply += centerServer.getLocalRecordCount();
-                        }
-                        else if (receiveData.equals("getCountt")){
+                            reply = CompletableFuture.supplyAsync(() -> centerServer.getLocalRecordCount());
+                        } else if (receiveData.equals("getCountt")) {
                             System.out.println("it works somehow");
-                        }
-
-                        else if (receiveData.substring(0,2).equals("hb")) {
+                        } else if (receiveData.substring(0, 2).equals("hb")) {
                             String[] hb = receiveData.split(":");
                             if (centerServer.servers.get(hb[1]) != null) {
                                 centerServer.servers.get(hb[1]).lastHB = new Date();
@@ -64,37 +62,45 @@ public class UDPServer implements Runnable {
                             }
                         } else if (receiveData.equals("elect")) {
                             System.out.println("incoming elect\n");
-                            reply = "ok";
+                            reply = CompletableFuture.supplyAsync(() -> "ok");
                             //centerServer.bullyElect();
                         } else if (receiveData.split(":")[0].equals("victory")) {
                             // upon recieval of victory message from some server - we update the status of that server to 1
                             if (centerServer.servers.get(receiveData.split(":")[1]) != null) {
                                 centerServer.servers.get(receiveData.split(":")[1]).status = 1;
-                                reply = "ok";
+                                reply = CompletableFuture.supplyAsync(() -> "ok");
                             } else {
                                 System.out.println("wrong victory message from" + centerServer.servers.get(receiveData.split(":")[1]));
                             }
-                        } else if (receiveData.split(":")[0].equals("rollback")){
+                        } else if (receiveData.split(":")[0].equals("rollback")) {
                             centerServer.removeRecord(receiveData.split(":")[1]);
-                            reply = "ok";
+                            reply = CompletableFuture.supplyAsync(() -> "ok");
                         }
                     } else if (object instanceof Records) {
                         Records record = (Records) object;
-                        reply = centerServer.landRecord(record);
-                    } else if (object instanceof Request){
+                        reply = CompletableFuture.supplyAsync(() -> centerServer.landRecord(record));
+                    } else if (object instanceof Request) {
                         Request inRequest = (Request) object;
-                        if(inRequest.leaders.size()>0){
-                            centerServer.leaders=inRequest.leaders;
-                        } else{
+                        if (inRequest.leaders.size() > 0) {
+                            centerServer.leaders = inRequest.leaders;
+                        } else {
                             //TODO: describe method calls from hashmap with params
                         }
                     }
-                    if (reply.length() > 0) {
-                        sendBuffer = reply.getBytes();
-                        System.out.println("Sending: "+reply);
-                        DatagramPacket send = new DatagramPacket(sendBuffer, sendBuffer.length, request.getAddress(), request.getPort());
-                        datagramSocket.send(send);
-                    }
+                    reply.thenApply(v -> {
+                        if (v.length() > 0) {
+                            byte[] sendBuffer = v.getBytes();
+                            System.out.println("Sending: " + v);
+                            DatagramPacket send = new DatagramPacket(sendBuffer, sendBuffer.length, request.getAddress(), request.getPort());
+                            try {
+                                datagramSocket.send(send);
+                            } catch (Exception e) {
+                                System.out.println(e);
+                            }
+
+                        }
+                        return "ok";
+                    });
 
                 } catch (IOException e) {
                     System.out.println("UDP Server socket is closed!");

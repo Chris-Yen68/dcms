@@ -202,13 +202,13 @@ public class CenterServer {
     /*
       Returns local record count for the particular object instance, which is executed by some instance getRecordCount query.
     */
-    public int getLocalRecordCount() {
+    public String getLocalRecordCount() {
         int sum = 0;
         for (ArrayList<Records> records :
                 database.values()) {
             sum += records.size();
         }
-        return sum;
+        return Integer.toString(sum);
     }
 
     /*
