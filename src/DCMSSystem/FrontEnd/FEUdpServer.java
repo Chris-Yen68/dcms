@@ -11,6 +11,7 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class FEUdpServer implements Runnable {
@@ -45,8 +46,8 @@ public class FEUdpServer implements Runnable {
                          */
                         String heartbeat = info[1];
                         frontEnd.servers.entrySet().stream()
-                                .filter(s->s.getValue().replicaGroup.equals(heartbeat.substring(0,3)))
-                                .forEach(s->s.getValue().state=1);
+                                .filter(s -> s.getValue().replicaGroup.equals(heartbeat.substring(0, 3)))
+                                .forEach(s -> s.getValue().state = 1);
                         frontEnd.servers.get(heartbeat).lastHB = new Date();
                         System.out.println("Get hb from " + heartbeat);
                     } else {
@@ -56,9 +57,14 @@ public class FEUdpServer implements Runnable {
                         String victory = info[1];
                         frontEnd.servers.get(victory).status = 1;
                         System.out.println("The new leader for group " + victory.substring(0, 3) + " is " + victory);
-                        String oldLeader = frontEnd.servers.entrySet().stream()
-                                .filter(s -> (s.getValue().status == 1) && (s.getValue().state == 0) && (s.getValue().replicaGroup.equals(victory.substring(0, 3))))
-                                .findFirst().get().getKey();
+                        String oldLeader = "";
+                        do {
+                            Thread.sleep(1000);
+                            Map.Entry<String, ServerProperties> entry = frontEnd.servers.entrySet().stream()
+                                    .filter(s -> (s.getValue().status == 1) && (s.getValue().state == 0) && (s.getValue().replicaGroup.equals(victory.substring(0, 3))))
+                                    .findFirst().orElse(null);
+                            oldLeader = entry == null ? "no value" : entry.getKey();
+                        } while (oldLeader.equals("no value"));
                         frontEnd.servers.remove(oldLeader);
                         /*
                             Broadcast updated leaders info to each leader.
@@ -83,6 +89,8 @@ public class FEUdpServer implements Runnable {
                 } catch (IOException e) {
                     System.out.println("UDP Server socket is closed!");
                 } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
