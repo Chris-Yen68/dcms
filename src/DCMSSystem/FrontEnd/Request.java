@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Request implements Serializable {
+    public int id;
     public Map<String,ServerProperties> leaders;
     public HashMap<String, String> params;
 
