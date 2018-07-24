@@ -126,17 +126,23 @@ public class FrontEndImpl extends CenterServicePOA {
                         && (s.getValue().status == 1))
                 .map(s -> s.getValue())
                 .findFirst().get();
-        if (destination.state == 0) {
-            synchronized (lock) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
         String result = "";
         do {
+            if (destination.state == 0) {
+                synchronized (lock) {
+                    try {
+                        lock.wait();
+                        destination = servers.entrySet()
+                                .stream()
+                                .filter(s -> (s.getKey().substring(0, 3).equals(serverName))
+                                        && (s.getValue().status == 1))
+                                .map(s -> s.getValue())
+                                .findFirst().get();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
             result = UDPClient.request(serializedRequest, destination.udpPort);
         } while (result.equals("no reply"));
         return result;
