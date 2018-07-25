@@ -48,6 +48,7 @@ public class ByteUtility {
         }
         return bytes;
     }
+
     public static int generateSeq(){
         int result = 0;
         int c = 1;

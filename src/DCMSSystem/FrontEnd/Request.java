@@ -7,6 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Request implements Serializable {
+    /*
+        Add id in each request for backend checking if this request is processed.
+     */
+    public int id;
     public Map<String,ServerProperties> leaders;
     public HashMap<String, String> params;
 
