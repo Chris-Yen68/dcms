@@ -13,7 +13,7 @@ public class DataSeedingClient {
     public static HashMap<String, String> recordForTestMultiThread= new HashMap<String, String>();
 
     public void scan( NamingContextExt ncRef) throws Exception {
-        File file=new File("src/operation.txt");
+        File file=new File("src/DCMSSystem/operation.txt");
         InputStreamReader reader=new InputStreamReader(new FileInputStream(file));
         BufferedReader input=new BufferedReader(reader);
         String line=input.readLine();

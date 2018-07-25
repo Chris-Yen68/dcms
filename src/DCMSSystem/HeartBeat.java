@@ -31,12 +31,12 @@ public class HeartBeat implements Runnable {
                 servers.keySet().stream()
 
                         //means if leader - send HB to everybody, including FE, else - exclude FE
-                        .filter(centerServer.isLeader ? ((v) -> true) : ((v) -> servers.get(v).status != 2))
+                        .filter(isLeader ? ((v) -> true) : ((v) -> servers.get(v).status != 2))
                         .forEach((v) -> {
                             ServerProperties server = servers.get(v);
                             //TODO: refactor the var name to make it more readable.
                             if (server.lastHB != null) {
-                                if (timeNow - server.lastHB.getTime() > 3000) {
+                                if (timeNow - server.lastHB.getTime() > 999000) {
                                     System.out.println(v+" is dead");
                                     if (server.status == 1 && server.state != 0) {
                                         System.out.println("Leader is dead, electing...");

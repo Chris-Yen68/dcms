@@ -1,17 +1,18 @@
 package DCMSSystem.UDP;
 
-import DCMSSystem.ByteUtility;
-import DCMSSystem.CenterServer;
+import DCMSSystem.*;
 import DCMSSystem.FrontEnd.Request;
 import DCMSSystem.Record.Records;
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
+import sun.security.krb5.internal.PAData;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.sql.SQLOutput;
+import java.util.*;
+
 
 public class UDPServer implements Runnable {
     private int portNumber;
@@ -74,22 +75,190 @@ public class UDPServer implements Runnable {
                             } else {
                                 System.out.println("wrong victory message from" + centerServer.servers.get(receiveData.split(":")[1]));
                             }
-                        } else if (receiveData.split(":")[0].equals("rollback")){
-                            centerServer.removeRecord(receiveData.split(":")[1]);
-                            reply = "ok";
+                        }else if (receiveData.split(":")[0].equals("operation")){
+                            String[] replySequences = receiveData.split(":");
+
+                            handleReceived(getPosition(replySequences[0]),replySequences);
                         }
                     } else if (object instanceof Records) {
                         Records record = (Records) object;
-                        reply = centerServer.landRecord(record);
+                        HashMap<Character, ArrayList<Records>> centerdata = centerServer.database;
+                        synchronized (centerdata) {
+                            if (centerdata.get(record.getLastName().charAt(0)) != null) {
+                                centerdata.get(record.getLastName().charAt(0)).add(record);
+
+                            } else {
+                                ArrayList<Records> newArray = new ArrayList<>();
+                                newArray.add(record);
+                                centerdata.put(record.getLastName().charAt(0), newArray);
+                                System.out.println(record.getRecordID());
+                            }
+                        }
+                        int seqNumber = ByteUtility.generateSeq();
+                        Wrapper wrapper = new Wrapper("add",record);
+                        String response = centerServer.groupMethodCall(seqNumber,ByteUtility.toByteArray(wrapper));
+                        if (response.equals("Done" + ":" + seqNumber)) {
+                            reply = record.getRecordID() + " is stored in the " + centerServer.getCenterName() + " | ";
+                        }
+
                     } else if (object instanceof Request){
                         Request inRequest = (Request) object;
-                        if(inRequest.leaders.size()>0){
+                        if(inRequest.leaders != null){
                             centerServer.leaders=inRequest.leaders;
-                        } else{
-                            //TODO: describe method calls from hashmap with params
+                        }
+                        int seqNumber = ByteUtility.generateSeq();
+                        HashMap<String,String> askContent = inRequest.params;
+                        byte [] temp =null;
+                        String operation = askContent.get("operation");
+                        if (askContent.get("operation").equals("createTRecord")){
+                            for (String s : askContent.values()) {
+                                System.out.println(s);
+                            }
+                            String id = centerServer.createTRecord(askContent.get("managerId"),askContent.get("firstName"),askContent.get("lastName"),askContent.get("address"),askContent.get("phone"),askContent.get("specialization"),askContent.get("location"));
+
+                            System.out.println(id + " is created");
+                            Records broadcast = null;
+                            for (Map.Entry<Character, ArrayList<Records>> listEntry : centerServer.database.entrySet()) {
+                                for (Records records : listEntry.getValue()) {
+                                    if (records.getRecordID().equals(id)){
+                                        broadcast = records;
+                                        System.out.println(broadcast);
+                                    }
+                                }
+                            }
+                            if (broadcast != null) {
+                                Wrapper wrapper = new Wrapper("createTRecord",askContent.get("managerId"),broadcast);
+                                temp = ByteUtility.toByteArray(wrapper);
+                            }else {
+                                System.out.println("Nothing Found!");
+                            }
+
+                        } else if (askContent.get("operation").equals("createSRecord")){
+                            String[] courseRegistered = askContent.get("courseRegistered").split(" ");
+                            for (String s : askContent.keySet()) {
+                                System.out.println(s);
+                            }
+                            String id = centerServer.createSRecord(askContent.get("managerId"), askContent.get("firstName"), askContent.get("lastName"), courseRegistered, askContent.get("status"), askContent.get("statusDate"));
+                            Records broadcast = null;
+                            for (Map.Entry<Character, ArrayList<Records>> listEntry : centerServer.database.entrySet()) {
+                                for (Records records : listEntry.getValue()) {
+                                    if (records.getRecordID().equals(id)){
+                                        broadcast = records;
+                                    }
+                                }
+                            }
+                            if (broadcast != null) {
+                                Wrapper wrapper = new Wrapper("createSRecord",askContent.get("managerId"), broadcast);
+                                temp = ByteUtility.toByteArray(wrapper);
+                                Wrapper wrapper1 = null;
+                                try {
+                                    wrapper1 = (Wrapper) ByteUtility.toObject(temp);
+                                } catch (ClassNotFoundException e) {
+                                    e.printStackTrace();
+                                }
+                                System.out.println(wrapper1.getRecords());
+                            }
+                        } else if (askContent.get("operation").equals("editRecord")){
+                            centerServer.editRecord(askContent.get("managerId"),askContent.get("recordID"),askContent.get("fieldName"),askContent.get("newValue"));
+                            Wrapper wrapper = new Wrapper("editRecord",askContent);
+                            temp = ByteUtility.toByteArray(wrapper);
+
+                        } else if (askContent.get("operation").equals("getRecordCounts")){
+                                reply += centerServer.getCenterName() + ":" + centerServer.getLocalRecordCount() + " ";
+                                for (Map.Entry<String, ServerProperties> entry : inRequest.leaders.entrySet()) {
+                                    if (!entry.getKey().equals(centerServer.getCenterName())) {
+                                        reply += UDPClient.request(ByteUtility.toByteArray("getCount"), entry.getValue().udpPort);
+                                    }
+                                }
+                        }else if (askContent.get("operation").equals("transferRecord")){
+                            centerServer.transferRecord(askContent.get("managerId"),askContent.get("recordID"),askContent.get("remoteCenterServerName"));
+                        }
+                        centerServer.getHandledRequests().add(seqNumber);
+                        byte[] content = temp;
+                        if (!askContent.get("operation").equals("getRecordCounts")){
+                            String[] decision = centerServer.groupMethodCall(seqNumber,content).split(":");
+                            if (decision.length != 0 && decision != null ){
+                                if (decision[0].equals("Done")){
+                                    reply = askContent.get("operation") + " is done including replica servers!";
+                                }
+                            }
+                        }
+
+
+
+                    }
+                    else if (object instanceof Packet){
+                        Packet receivedPacket = (Packet) object;
+                        System.out.println("Received Packet from " + receivedPacket.getSender() );
+                        Object inPacket = null;
+
+                        try {
+                            inPacket = (Object)ByteUtility.toObject(receivedPacket.getContent());
+
+                            System.out.println(receivedPacket.getContent());
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+
+                        if (!centerServer.getHandledRequests().contains(receivedPacket.getSeqNUmber())){
+                            if ((centerServer.getLastReceived().get(receivedPacket.getSender()) + 1) == receivedPacket.getCheckSum()){
+
+                                String temp = handlePacket(receivedPacket,inPacket);
+                                System.out.println(temp);
+                                if ("operation".equals(temp.split(":")[0])){
+
+                                    reply = "operation" + ":" +  temp.split(":")[1] + ":" +  receivedPacket.getSender() + ":" + receivedPacket.getSeqNUmber();
+                                    sendBuffer = reply.getBytes();
+                                    System.out.println("---------handled: "+reply);
+                                    DatagramPacket send = new DatagramPacket(sendBuffer, sendBuffer.length, request.getAddress(), request.getPort());
+                                    datagramSocket.send(send);
+
+                                }
+                                String responseGroup = centerServer.groupMethodCall(receivedPacket.getSeqNUmber(),receivedPacket.getContent());
+                                System.out.println(responseGroup);
+//                               String[] postions = getPosition(temp.split(":")[1]).split(":");
+//                                int value = Integer.valueOf(postions[1]);
+                            }else if ((centerServer.getLastReceived().get(receivedPacket.getSender()) + 1) > receivedPacket.getCheckSum()){
+                                System.out.println("Duplicated Message will not be handled!");
+                            }else if ((centerServer.getLastReceived().get(receivedPacket.getSender()) + 1) < receivedPacket.getCheckSum()){
+                                if (centerServer.getWaitingList().containsKey(receivedPacket.getSender())){
+                                    centerServer.getWaitingList().get(receivedPacket.getSender()).add(receivedPacket);
+                                }else {
+                                    LinkedList<Packet> packets = new LinkedList<>();
+                                    packets.add(receivedPacket);
+                                    centerServer.getWaitingList().put(receivedPacket.getSender(),packets);
+                                    System.out.println("Packet from " + receivedPacket.getSender() + " is stored in the waiting list in " + centerServer.getCenterName());
+                                }
+                            }
+                        }else {
+                            reply = "operation" + ":" + "DoneBefore" + ":" + receivedPacket.getSender() + ":" + receivedPacket.getSeqNUmber();
+                        }
+
+                        if (centerServer.getWaitingList().containsKey(receivedPacket.getSender())){
+                            boolean c = true;
+                            while (c) {
+                                for (Packet packet : centerServer.getWaitingList().get(receivedPacket.getSender())) {
+                                    if ((centerServer.getLastReceived().get(receivedPacket.getSender()) + 1) == packet.getCheckSum()) {
+                                        String arbitraryOrdered = handlePacket(receivedPacket, inPacket);
+                                        UDPClient.request(ByteUtility.toByteArray(arbitraryOrdered),centerServer.servers.get(packet.getSender()).udpPort);
+                                    }
+                                }
+                                c = false;
+                                for (Packet packet : centerServer.getWaitingList().get(receivedPacket.getSender())) {
+                                    if ((centerServer.getLastReceived().get(receivedPacket.getSender()) + 1) == packet.getCheckSum()) {
+                                            c =true;
+                                    }
+                                }
+                            }
+                        }
+                    }else if (object instanceof Integer){
+                        if (centerServer.getHandledRequests().contains((Integer) object)){
+                            reply = "Done";
+                            System.out.println((Integer) object + " is done !!!!!!! No need to Confirm!!!!");
                         }
                     }
                     if (reply.length() > 0) {
+                        System.out.println(System.currentTimeMillis());
                         sendBuffer = reply.getBytes();
                         System.out.println("Sending: "+reply);
                         DatagramPacket send = new DatagramPacket(sendBuffer, sendBuffer.length, request.getAddress(), request.getPort());
@@ -105,6 +274,75 @@ public class UDPServer implements Runnable {
         }
         System.out.println("UDP Server is closed!");
 
+    }
+
+    public String handlePacket(Packet receivedPacket,Object inPacket){
+        String result = "";
+            if (inPacket instanceof Wrapper){
+                Wrapper wrapper = (Wrapper)inPacket;
+                System.out.println(wrapper.getManagerID() + " : " + wrapper.getRecords());
+                if (wrapper.getCommandName().equals("createTRecord") || wrapper.getCommandName().equals("createSRecord") ||wrapper.getCommandName().equals("add")){
+                    if (centerServer.database.containsKey(wrapper.getRecords().getLastName().charAt(0))){
+                        centerServer.database.get(wrapper.getRecords().getLastName().charAt(0)).add(wrapper.getRecords());
+                    }else {
+                        ArrayList<Records> arrayList = new ArrayList<>();
+                        arrayList.add(wrapper.getRecords());
+                        centerServer.database.put(wrapper.getRecords().getLastName().charAt(0),arrayList);
+                    }
+                    Log.log(Log.getCurrentTime(), wrapper.getManagerID(), wrapper.getCommandName(), wrapper.getCommandName() +" successfully! Record ID is " + wrapper.getRecords().getRecordID());
+
+                    result = "operation" + ":" + wrapper.getCommandName() + ":" + receivedPacket.getSender() + ":" +receivedPacket.getSeqNUmber();
+                }else if (wrapper.getCommandName().equals("delete")){
+                    centerServer.database.get(wrapper.getRecords().getLastName().charAt(0)).remove(wrapper.getRecords());
+                    result = "operation" + ":" + wrapper.getCommandName() + ":" + receivedPacket.getSender() + ":" +receivedPacket.getSeqNUmber();
+                }else if (wrapper.getCommandName().equals("editRecord")){
+                    HashMap<String,String> infor =  wrapper.getEditInfor();
+
+                    String response = centerServer.editRecord(infor.get("managerId"),infor.get("recordID"),infor.get("fieldName"),infor.get("newValue"));
+                    System.out.println(response);
+                    Log.log(Log.getCurrentTime(), infor.get("managerId"), wrapper.getCommandName(), wrapper.getCommandName() +" successfully! Record ID is " + infor.get("recordID"));
+                    result = "operation" + ":" + "edit" + ":" + infor.get("recordID") + ":" + receivedPacket.getSender() + ":" +receivedPacket.getSeqNUmber();
+
+                }
+            }
+            int update = centerServer.getLastReceived().get(receivedPacket.getSender()) + 1;
+            centerServer.getLastReceived().replace(receivedPacket.getSender(),update);
+            centerServer.getHandledRequests().add(receivedPacket.getSeqNUmber());
+            return result;
+    }
+
+    public String getPosition(String type){
+        int sender = 0;
+        int seqNumer = 0;
+        if (type.equals("edit")){
+            sender = 3;
+            seqNumer = 4;
+        }else if (type.equals("createTRecord") || type.equals("createSRecord") || type.equals("add") || type.equals("delete")){
+            sender = 2;
+            seqNumer = 3;
+        }else if (type.equals("DoneBefore")){
+            sender = 2 ;
+            seqNumer = 3;
+        }else if (type.equals("broadcast")){
+            sender = 2 ;
+            seqNumer = 3;
+        }
+        return String.valueOf(sender) + ":" + String.valueOf(seqNumer);
+    }
+
+    public void handleReceived(String type,String[] sequences){
+        String[] positions = getPosition(type).split(":");
+        int sender = Integer.valueOf(positions[0]);
+        int seqNumer = Integer.valueOf(positions[1]);
+        Integer value = Integer.valueOf(sequences[seqNumer]);
+        if (centerServer.getSentPacket().containsKey(value) && centerServer.getSentPacket().get(value) != null) {
+            for (String replySequence : centerServer.getSentPacket().get(sequences[seqNumer])) {
+                    if (sequences[sender].equals(replySequence)){
+                        centerServer.getSentPacket().get(sequences[seqNumer]).remove(replySequence);
+                        System.out.println("remove packet from " + sequences[sender]);
+                    }
+            }
+        }
     }
 
     public void stopServer() {

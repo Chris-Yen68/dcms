@@ -39,7 +39,7 @@ public class InteractonClient {
         NamingContextExt ncRef =
                 NamingContextExtHelper.narrow(objRef);
 
-        new DataSeedingClient().scan(ncRef);
+//        new DataSeedingClient().scan(ncRef);
         new InteractonClient().scan(ncRef);
     }
 
@@ -57,23 +57,9 @@ public class InteractonClient {
                 System.out.println("ManagerId error. Please input again");
                 continue;
             }
-            switch (managerId.substring(0, 3)) {
-                case "MTL": {
-                    service = CenterServiceHelper.narrow(ncRef.resolve_str("MTL"));
-                    ifContinue = processOperation(service,managerId);
-                    break;
-                }
-                case "LVL": {
-                    service = CenterServiceHelper.narrow(ncRef.resolve_str("LVL"));
-                    ifContinue = processOperation(service,managerId);
-                    break;
-                }
-                case "DDO": {
-                    service = CenterServiceHelper.narrow(ncRef.resolve_str("DDO"));
-                    ifContinue = processOperation(service,managerId);
-                    break;
-                }
-            }
+            service = CenterServiceHelper.narrow(ncRef.resolve_str("FrontEndImpl"));
+            ifContinue = processOperation(service,managerId);
+
         } while (ifContinue);
     }
 
@@ -85,7 +71,7 @@ public class InteractonClient {
         System.out.println("2> Create Student Record.");
         System.out.println("3> Get Record Counts.");
         System.out.println("4> Edit Record.");
-        System.out.println("5> Exit.");
+        System.out.println("5> transferRecord.");
         option = scanner.nextInt();
         switch (option) {
             case 1: {

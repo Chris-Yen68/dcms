@@ -48,4 +48,14 @@ public class ByteUtility {
         }
         return bytes;
     }
+    public static int generateSeq(){
+        int result = 0;
+        int c = 1;
+        for(int i = 0;i<=5;i++){
+            result += (int)(Math.random()*10 + 1) * c;
+            c *= 10;
+
+        }
+        return result;
+    }
 }

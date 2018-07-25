@@ -48,6 +48,8 @@ public  class  Records implements Serializable {
         return recordID;
     }
 
-
-
+    @Override
+    public String toString() {
+        return recordID +":" + firstName + " " + lastName;
+    }
 }
