@@ -101,7 +101,7 @@ public class InteractonClient {
                 break;
             }
         }
-        if (option == 5) return false;
+        if (option == 7) return false;
         else return true;
     }
 

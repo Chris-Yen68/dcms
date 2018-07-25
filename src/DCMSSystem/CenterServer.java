@@ -178,8 +178,9 @@ public class CenterServer {
     }
 
     public String groupMethodCall(int seqNumber, byte[] content) {
-        String result = "";
-        Packet packet = new Packet(0,seqNumber,content,"","");
+        synchronized (this) {
+            String result = "";
+            Packet packet = new Packet(0, seqNumber, content, "", "");
 //        for (Map.Entry<String, ServerProperties> entry : servers.entrySet()) {
 //            if (entry.getValue().replicaGroup.equals(centerName.substring(0,3)) && entry.getValue().state == 1 &&
 //                    !entry.getKey().equals(centerName) && entry.getValue().status != 1){
@@ -204,36 +205,38 @@ public class CenterServer {
 //                }
 //            }
 //        }
-        servers.entrySet().stream().filter((v) -> (v.getValue().replicaGroup.equals(centerName.substring(0,3))) && v.getValue().state == 1 &&
-        !v.getKey().equals(centerName) && v.getValue().status != 1).forEach((v) ->
-                {       packet.setCheckSum(checkSum.get(v.getKey()));
-                    packet.setSender(centerName);
-                    packet.setReceiver(v.getKey());
-                    byte [] send = ByteUtility.toByteArray(packet);
-                    String response = UDPClient.groupCall(send,v.getValue().udpPort);
-                    LinkedList<String> linkedList = new LinkedList<>();
-                    linkedList.add(v.getKey());
-                    System.out.println(v.getKey());
-                    sentPacket.put(seqNumber,linkedList);
-                    System.out.println(linkedList.size());
-                    int update = checkSum.get(v.getKey()) + 1;
-                    checkSum.replace(v.getKey(),update);
-                    System.out.println(response + " FROM GROUP");
-                    if (response.split(":")[0].equals("operation")){
-                        sentPacket.get(seqNumber).remove(v.getKey());
-                    }else if (response.equals("no reply")){
-                        System.out.println("RE SEND !!!!!!");
-                        reSend = true;
-                        reSendList.add(packet);
+            servers.entrySet().stream().filter((v) -> (v.getValue().replicaGroup.equals(centerName.substring(0, 3))) && v.getValue().state == 1 &&
+                    !v.getKey().equals(centerName) && v.getValue().status != 1).forEach((v) ->
+                    {
+                        packet.setCheckSum(checkSum.get(v.getKey()));
+                        packet.setSender(centerName);
+                        packet.setReceiver(v.getKey());
+                        byte[] send = ByteUtility.toByteArray(packet);
+                        String response = UDPClient.groupCall(send, v.getValue().udpPort);
+                        LinkedList<String> linkedList = new LinkedList<>();
+                        linkedList.add(v.getKey());
+                        System.out.println(v.getKey());
+                        sentPacket.put(seqNumber, linkedList);
+                        System.out.println(linkedList.size());
+                        int update = checkSum.get(v.getKey()) + 1;
+                        checkSum.replace(v.getKey(), update);
+                        System.out.println(response + " FROM GROUP");
+                        if (response.split(":")[0].equals("operation")) {
+                            sentPacket.get(seqNumber).remove(v.getKey());
+                        } else if (response.equals("no reply")) {
+                            System.out.println("RE SEND !!!!!!");
+                            reSend = true;
+                            reSendList.add(packet);
+                        }
                     }
-                }
 
-                );
-        if (sentPacket.get(seqNumber).size() == 0){
-            result = "Done" + ":" + seqNumber;
+            );
+            if (sentPacket.get(seqNumber).size() == 0) {
+                result = "Done" + ":" + seqNumber;
+            }
+            System.out.println(result + "-----------");
+            return result;
         }
-        System.out.println(result + "-----------");
-        return result;
     }
 
     public String createTRecord(String managerId, String firstName, String lastName, String address, String phone, String specialization, String location) {
