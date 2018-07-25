@@ -36,7 +36,7 @@ public class HeartBeat implements Runnable {
                             ServerProperties server = servers.get(v);
                             //TODO: refactor the var name to make it more readable.
                             if (server.lastHB != null) {
-                                if (timeNow - server.lastHB.getTime() > 999000) {
+                                if (timeNow - server.lastHB.getTime() > 3500) {
                                     System.out.println(v+" is dead");
                                     if (server.status == 1 && server.state != 0) {
                                         System.out.println("Leader is dead, electing...");

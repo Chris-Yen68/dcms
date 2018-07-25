@@ -43,7 +43,7 @@ public class UDPClient {
         DatagramSocket datagramSocket = null;
         try {
             datagramSocket = new DatagramSocket();
-            datagramSocket.setSoTimeout(6000);
+            datagramSocket.setSoTimeout(3000);
             try {
                 InetAddress inetAddress = InetAddress.getLocalHost();
                 int portNumber = centerPortNumber;
