@@ -9,7 +9,22 @@ public class Wrapper implements Serializable {
     private String commandName;
     private Records records;
     private String managerID;
+    private String recordID;
     private HashMap<String,String> editInfor;
+
+    public String getRecordID() {
+        return recordID;
+    }
+
+    public void setRecordID(String recordID) {
+        this.recordID = recordID;
+    }
+
+    public Wrapper(String commandName, String recordID) {
+
+        this.commandName = commandName;
+        this.recordID = recordID;
+    }
 
     public String getCommandName() {
         return commandName;

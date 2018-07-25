@@ -43,7 +43,7 @@ public class UDPClient {
         DatagramSocket datagramSocket = null;
         try {
             datagramSocket = new DatagramSocket();
-            datagramSocket.setSoTimeout(3000);
+            datagramSocket.setSoTimeout(2000);
             try {
                 InetAddress inetAddress = InetAddress.getLocalHost();
                 int portNumber = centerPortNumber;
@@ -93,5 +93,40 @@ public class UDPClient {
         } finally {
             datagramSocket.close();
         }
+    }
+    public static String groupCall(byte[] content, int port){
+        String result = "";
+        DatagramSocket datagramSocket = null;
+        try {
+            datagramSocket = new DatagramSocket();
+            datagramSocket.setSoTimeout(2000);
+            try {
+                InetAddress inetAddress = InetAddress.getLocalHost();
+                int portNumber = port;
+
+                DatagramPacket datagramPacket = new DatagramPacket(content,content.length,inetAddress,portNumber);
+                try {
+                    datagramSocket.send(datagramPacket);
+                    byte[] buffer = new byte[1024];
+                    DatagramPacket replayByte = new DatagramPacket(buffer,buffer.length);
+                    datagramSocket.receive(replayByte);
+                    result = new String(replayByte.getData(),0, replayByte.getLength());
+                    datagramSocket.close();
+                } catch (SocketTimeoutException e){
+                    result = "no reply";
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        finally {
+            datagramSocket.close();
+        }
+        return result;
     }
 }

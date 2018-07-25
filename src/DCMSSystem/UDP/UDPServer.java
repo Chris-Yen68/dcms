@@ -49,7 +49,7 @@ public class UDPServer implements Runnable {
                         String receiveData = (String) object;
                         System.out.println(object.toString());
                         if (receiveData.equals("getCount")) {
-                            reply += centerServer.getLocalRecordCount();
+                            reply +=  " " + centerServer.getCenterName() + ":" + centerServer.getLocalRecordCount();
                         }
                         else if (receiveData.equals("getCountt")){
                             System.out.println("it works somehow");
@@ -171,11 +171,11 @@ public class UDPServer implements Runnable {
                                     }
                                 }
                         }else if (askContent.get("operation").equals("transferRecord")){
-                            centerServer.transferRecord(askContent.get("managerId"),askContent.get("recordID"),askContent.get("remoteCenterServerName"));
+                            reply = centerServer.transferRecord(askContent.get("managerId"),askContent.get("recordID"),askContent.get("remoteCenterServerName"));
                         }
                         centerServer.getHandledRequests().add(seqNumber);
                         byte[] content = temp;
-                        if (!askContent.get("operation").equals("getRecordCounts")){
+                        if (!askContent.get("operation").equals("getRecordCounts") && !askContent.get("operation").equals("transferRecord")){
                             String[] decision = centerServer.groupMethodCall(seqNumber,content).split(":");
                             if (decision.length != 0 && decision != null ){
                                 if (decision[0].equals("Done")){
@@ -214,8 +214,12 @@ public class UDPServer implements Runnable {
                                     datagramSocket.send(send);
 
                                 }
-                                String responseGroup = centerServer.groupMethodCall(receivedPacket.getSeqNUmber(),receivedPacket.getContent());
-                                System.out.println(responseGroup);
+                                for (Map.Entry<String, ServerProperties> entry : centerServer.servers.entrySet()) {
+                                    if (entry.getKey().equals(centerServer.getCenterName()) && entry.getValue().status == 1){
+                                        String responseGroup = centerServer.groupMethodCall(receivedPacket.getSeqNUmber(), receivedPacket.getContent());
+                                        reply = "Done" + ":" + receivedPacket.getSeqNUmber();
+                                    }
+                                }
 //                               String[] postions = getPosition(temp.split(":")[1]).split(":");
 //                                int value = Integer.valueOf(postions[1]);
                             }else if ((centerServer.getLastReceived().get(receivedPacket.getSender()) + 1) > receivedPacket.getCheckSum()){
@@ -293,8 +297,20 @@ public class UDPServer implements Runnable {
 
                     result = "operation" + ":" + wrapper.getCommandName() + ":" + receivedPacket.getSender() + ":" +receivedPacket.getSeqNUmber();
                 }else if (wrapper.getCommandName().equals("delete")){
-                    centerServer.database.get(wrapper.getRecords().getLastName().charAt(0)).remove(wrapper.getRecords());
-                    result = "operation" + ":" + wrapper.getCommandName() + ":" + receivedPacket.getSender() + ":" +receivedPacket.getSeqNUmber();
+                    Records records = null;
+                    synchronized (centerServer.database) {
+                        for (char key : centerServer.database.keySet()) {
+                            for (Records record : centerServer.database.get(key)) {
+                                if (record.getRecordID().equals(wrapper.getRecordID())) {
+                                    records = record;
+                                }
+                            }
+                        }
+                    }
+                    if (centerServer.database.get(records.getLastName().charAt(0)).remove(records)) {
+
+                        result = "operation" + ":" + wrapper.getCommandName() + ":" + receivedPacket.getSender() + ":" + receivedPacket.getSeqNUmber();
+                    }
                 }else if (wrapper.getCommandName().equals("editRecord")){
                     HashMap<String,String> infor =  wrapper.getEditInfor();
 

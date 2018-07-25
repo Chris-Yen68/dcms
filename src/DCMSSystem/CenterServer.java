@@ -6,6 +6,7 @@ import DCMSSystem.Record.TeacherRecord;
 import DCMSSystem.UDP.UDPClient;
 import DCMSSystem.UDP.UDPServer;
 import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import org.omg.CORBA.PRIVATE_MEMBER;
 
 import java.beans.BeanInfo;
@@ -17,6 +18,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -96,6 +99,8 @@ public class CenterServer {
         heartBeatThread.start();
         sentPacket = new HashMap<>();
         CheckSum checkSumThread = new CheckSum(this);
+        reSendThread();
+        reSendThread.start();
         checkThread = new Thread(checkSumThread);
         checkThread.start();
 
@@ -132,6 +137,29 @@ public class CenterServer {
     private HashMap<Integer,LinkedList<String>> sentPacket;
     private HashMap<String,LinkedList<Packet>> waitingList = new HashMap<>();
 
+    private boolean reSend = false;
+    private Thread reSendThread;
+    private LinkedBlockingQueue<Packet> reSendList = new LinkedBlockingQueue<>();
+
+    public void reSendThread(){
+        reSendThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (servers.get(centerName).state == 1){
+                    if (reSend && !reSendList.isEmpty()){
+                        Packet packet = reSendList.poll();
+                        String response = UDPClient.request(ByteUtility.toByteArray(packet),servers.get(packet.getReceiver()).udpPort);
+                        if (response.split(":")[0].equals("operation")){
+                            System.out.println("DONEBEFORE ----------------");
+                            sentPacket.get(packet.getSeqNUmber()).remove(packet.getReceiver());
+                            reSend = false;
+                        }
+                    }
+                }
+            }
+        },"reSendCheck");
+    }
+
 
     public HashMap<String, LinkedList<Packet>> getWaitingList() {
         return waitingList;
@@ -151,7 +179,7 @@ public class CenterServer {
 
     public String groupMethodCall(int seqNumber, byte[] content) {
         String result = "";
-        Packet packet = new Packet(0,seqNumber,content,"");
+        Packet packet = new Packet(0,seqNumber,content,"","");
 //        for (Map.Entry<String, ServerProperties> entry : servers.entrySet()) {
 //            if (entry.getValue().replicaGroup.equals(centerName.substring(0,3)) && entry.getValue().state == 1 &&
 //                    !entry.getKey().equals(centerName) && entry.getValue().status != 1){
@@ -180,8 +208,9 @@ public class CenterServer {
         !v.getKey().equals(centerName) && v.getValue().status != 1).forEach((v) ->
                 {       packet.setCheckSum(checkSum.get(v.getKey()));
                     packet.setSender(centerName);
+                    packet.setReceiver(v.getKey());
                     byte [] send = ByteUtility.toByteArray(packet);
-                    String response = UDPClient.request(send,v.getValue().udpPort);
+                    String response = UDPClient.groupCall(send,v.getValue().udpPort);
                     LinkedList<String> linkedList = new LinkedList<>();
                     linkedList.add(v.getKey());
                     System.out.println(v.getKey());
@@ -192,6 +221,10 @@ public class CenterServer {
                     System.out.println(response + " FROM GROUP");
                     if (response.split(":")[0].equals("operation")){
                         sentPacket.get(seqNumber).remove(v.getKey());
+                    }else if (response.equals("no reply")){
+                        System.out.println("RE SEND !!!!!!");
+                        reSend = true;
+                        reSendList.add(packet);
                     }
                 }
 
@@ -360,6 +393,7 @@ public class CenterServer {
         boolean has = false;
         ArrayList<Records> toBeModified = null;
         Records transferedRecord = null;
+
         synchronized (database) {
             for (char key : database.keySet()) {
                 for (Records record : database.get(key)) {
@@ -375,15 +409,27 @@ public class CenterServer {
              */
             boolean isValidatedCenter = remoteCenterServerName.equals("MTL") || remoteCenterServerName.equals("LVL") || remoteCenterServerName.equals("DDO");
             boolean ableToTransfer = isValidatedCenter && has && !centerName.equals(remoteCenterServerName);
-            byte[] serializedMessage = ByteUtility.toByteArray(transferedRecord);
+            byte[] serializedMessage = null;
             /*
              using udp to params the function and parse the object to bytes to do the work.
              */
             if (ableToTransfer) {
-                for (Map.Entry<String, ServerProperties> entry : servers.entrySet()) {
-                    if (entry.getKey().substring(0,3).equals(remoteCenterServerName.substring(0,3))){
-                        if (entry.getValue().status == 1){
-                            result += UDPClient.request(serializedMessage, entry.getValue().udpPort);
+
+                for (Map.Entry<String, ServerProperties> entry : leaders.entrySet()) {
+                    System.out.println(entry.getKey());
+                    if (entry.getKey().substring(0,3).equals(remoteCenterServerName)){
+                        if (entry.getValue().state == 1){
+                            int addSeqNumber = ByteUtility.generateSeq();
+                            System.out.println(transferedRecord);
+                            Wrapper wrapper = new Wrapper("add",managerID,transferedRecord);
+                            Packet packet = new Packet(checkSum.get(entry.getKey()),addSeqNumber,ByteUtility.toByteArray(wrapper),centerName,entry.getKey());
+                            System.out.println("add to " + entry.getKey() + ":" + entry.getValue().udpPort);
+                            serializedMessage = ByteUtility.toByteArray(packet);
+                            String response = UDPClient.groupCall(serializedMessage, entry.getValue().udpPort);
+                            if (response.split(":")[0].equals("operation") && Integer.valueOf(response.split(":")[3]) ==  addSeqNumber){
+                                result += recordID + " is added to " + entry.getKey() + " and ";
+                            }
+                            System.out.println(result);
                         }
                     }
                 }
@@ -391,10 +437,10 @@ public class CenterServer {
 //                        .mapToObj((v) -> UDPClient.request(serializedMessage, hardcodedServerPorts[v])).collect(Collectors.joining());
 
                 if (toBeModified.remove(transferedRecord)) {
-                    int seqNumber = ByteUtility.generateSeq();
-                    Wrapper wrapper = new Wrapper("delete",transferedRecord);
-                    String response = groupMethodCall(seqNumber,ByteUtility.toByteArray(wrapper));
-                    if (response.equals("Done" + ":" + seqNumber)){
+                    int deleteSeqNumber = ByteUtility.generateSeq();
+                    Wrapper wrapper = new Wrapper("delete",recordID);
+                    String response = groupMethodCall(deleteSeqNumber,ByteUtility.toByteArray(wrapper));
+                    if (response.equals("Done" + ":" + deleteSeqNumber)){
                         result += recordID + " is removed from " + getCenterName();
                     }
 

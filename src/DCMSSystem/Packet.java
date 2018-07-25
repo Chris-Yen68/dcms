@@ -7,6 +7,24 @@ public class Packet implements Serializable {
     private int seqNUmber;
     private byte[] content;
     private String sender;
+    private String receiver;
+
+    public String getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(String receiver) {
+        this.receiver = receiver;
+    }
+
+    public Packet(int checkSum, int seqNUmber, byte[] content, String sender, String receiver) {
+
+        this.checkSum = checkSum;
+        this.seqNUmber = seqNUmber;
+        this.content = content;
+        this.sender = sender;
+        this.receiver = receiver;
+    }
 
     public void setSeqNUmber(int seqNUmber) {
         this.seqNUmber = seqNUmber;
@@ -24,13 +42,13 @@ public class Packet implements Serializable {
         this.sender = sender;
     }
 
-    public Packet(int checkSum, int seqNUmber, byte[] content, String sender) {
-
-        this.checkSum = checkSum;
-        this.seqNUmber = seqNUmber;
-        this.content = content;
-        this.sender = sender;
-    }
+//    public Packet(int checkSum, int seqNUmber, byte[] content, String sender) {
+//
+//        this.checkSum = checkSum;
+//        this.seqNUmber = seqNUmber;
+//        this.content = content;
+//        this.sender = sender;
+//    }
 
     public int getCheckSum() {
         return checkSum;
