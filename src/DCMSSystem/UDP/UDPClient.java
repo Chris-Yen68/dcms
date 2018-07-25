@@ -2,96 +2,76 @@ package DCMSSystem.UDP;
 
 import DCMSSystem.ByteUtility;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.*;
 
+import net.rudp.ReliableSocket;
+import net.rudp.ReliableSocketOutputStream;
+
 public class UDPClient {
-    public static String request(String operation, String hostname ,int UDPServerPort){
-        String receivedInfor = "";
-        DatagramSocket datagramSocket = null;
-        try {
-            datagramSocket = new DatagramSocket();
-            try {
-                InetAddress inetAddress = InetAddress.getLocalHost();
-                byte[] opsBytes = operation.getBytes();
 
-                DatagramPacket datagramPacket = new DatagramPacket(opsBytes,operation.length(),inetAddress,UDPServerPort);
-                try {
-                    datagramSocket.send(datagramPacket);
-                    byte[] buffer = new byte[1024];
-                    DatagramPacket replayByte = new DatagramPacket(buffer,buffer.length);
-                    datagramSocket.receive(replayByte);
-                    receivedInfor = new String(replayByte.getData(),0, replayByte.getLength());
-                    datagramSocket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
+    public static String request(byte[] objBytes, int centerPortNumber) {
+        String receivedInfor = "";
+        ReliableSocket socket;
+        try {
+            socket = new ReliableSocket();
+            socket.setSoLinger(true, 0);
+            socket.setSoTimeout(1000);
+            try {
+                //send part
+                socket.connect(new InetSocketAddress("localhost", centerPortNumber),1000);
+                ReliableSocketOutputStream outToClient = (ReliableSocketOutputStream) socket.getOutputStream();
+                System.out.println(objBytes.length);
+                outToClient.write(objBytes);
+                outToClient.flush();
+                outToClient.close();
+
+                //receive part
+                BufferedReader inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                receivedInfor = inFromClient.readLine();
+            } catch (IOException e) {
+                receivedInfor = "no reply";
+            } finally {
+
+                socket.close();
             }
-        } catch (SocketException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
-            datagramSocket.close();
         }
         return receivedInfor;
     }
 
-    public static String request(byte[] objBytes, int centerPortNumber){
-        String receivedInfor = "";
-        DatagramSocket datagramSocket = null;
-        try {
-            datagramSocket = new DatagramSocket();
-            datagramSocket.setSoTimeout(1000);
-            try {
-                InetAddress inetAddress = InetAddress.getLocalHost();
-                int portNumber = centerPortNumber;
-
-                DatagramPacket datagramPacket = new DatagramPacket(objBytes,objBytes.length,inetAddress,portNumber);
-                try {
-                    datagramSocket.send(datagramPacket);
-                    byte[] buffer = new byte[1024];
-                    DatagramPacket replayByte = new DatagramPacket(buffer,buffer.length);
-                    datagramSocket.receive(replayByte);
-                    receivedInfor = new String(replayByte.getData(),0, replayByte.getLength());
-                    datagramSocket.close();
-                } catch (SocketTimeoutException e){
-                    receivedInfor = "no reply";
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
-        finally {
-            datagramSocket.close();
-        }
-        return receivedInfor;
-    }
-
-    public static void heartbit (String sourceServer, String hostname, int pid, int port){
-        DatagramSocket datagramSocket = null;
-        String hb = "hb:"+sourceServer+":"+pid;
-
+    public static void heartbit(String sourceServer, String hostname, int pid, int port) {
         try {
 
-            datagramSocket = new DatagramSocket();
-            InetAddress inetAddress = InetAddress.getByName(hostname);
+            String hb = "hb:" + sourceServer + ":" + pid;
             byte[] hbBytes = ByteUtility.toByteArray(hb);
+            try {
+                ReliableSocket socket = new ReliableSocket();
+                socket.setSoLinger(true, 0);
+                socket.setSoTimeout(1000);
+                try {
+                    socket.connect(new InetSocketAddress(hostname, port), 1000);
+                    ReliableSocketOutputStream outToClient = (ReliableSocketOutputStream) socket.getOutputStream();
+                    outToClient.write(hbBytes, 0, hbBytes.length);
+                    outToClient.flush();
+                    outToClient.close();
+                } catch (Exception e){
 
-            DatagramPacket datagramPacket = new DatagramPacket(hbBytes,hbBytes.length,inetAddress,port);
-            datagramSocket.send(datagramPacket);
-            datagramSocket.close();
-            System.out.println("hb "+pid+" sent to "+hostname+":"+port);
-        } catch (Exception e){
-            e.printStackTrace();
-        } finally {
-            datagramSocket.close();
+                } finally {
+                    socket.close();
+                }
+                System.out.println("hb " + pid + " sent to " + hostname + ":" + port);
+                System.out.println("\n"+hbBytes.length);
+            } catch (Exception e) {
+                //e.printStackTrace();
+            }
+        } catch (Exception e) {
+            //e.printStackTrace();
         }
+
     }
 }

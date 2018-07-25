@@ -4,11 +4,11 @@ import DCMSSystem.ByteUtility;
 import DCMSSystem.CenterServer;
 import DCMSSystem.FrontEnd.Request;
 import DCMSSystem.Record.Records;
+import net.rudp.ReliableServerSocket;
+import net.rudp.ReliableSocketOutputStream;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
+import java.io.*;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -18,29 +18,50 @@ public class UDPServer implements Runnable {
     private int portNumber;
     private CenterServer centerServer;
     private boolean stop = true;
-    private DatagramSocket datagramSocket = null;
+    ReliableServerSocket ssocket;
 
     public UDPServer(int portNumber, CenterServer centerServer) {
         this.portNumber = portNumber;
         this.centerServer = centerServer;
     }
 
+
     @Override
     public void run() {
         try {
-            datagramSocket = new DatagramSocket(portNumber);
+            ssocket = new ReliableServerSocket(portNumber);
+            ssocket.setReuseAddress(true);
+
+            //datagramSocket = new DatagramSocket(portNumber);
 
             byte[] buffer = new byte[1024];
+            byte[] inBytes = new byte[1024];
 
             while (stop) {
                 CompletableFuture<String> reply=CompletableFuture.supplyAsync(() -> "");
-                DatagramPacket request = new DatagramPacket(buffer, buffer.length);
+                //DatagramPacket request = new DatagramPacket(buffer, buffer.length);
                 try {
                     Object object = null;
-                    datagramSocket.receive(request);
-                    System.out.printf("some data was recevied via udp\n");
+                    //datagramSocket.receive(request);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    Socket consocket = ssocket.accept();
+                    //BufferedInputStream is = consocket.getInputStream();
+
+
+                    byte[] subbuffer = new byte[1024];
+                    int read;
+//                    while ((read = consocket.getInputStream().read(subbuffer, 0, subbuffer.length)) != -1) {
+//                        baos.write(subbuffer, 0, read);
+//
+// }
+                    consocket.getInputStream().read(subbuffer, 0, subbuffer.length);
+                    baos.write(subbuffer, 0, subbuffer.length);
+                    baos.flush();
+                    inBytes = baos.toByteArray();
+
+                    System.out.printf("some data was recevied via udp "+inBytes.length+"\n");
                     try {
-                        object = ByteUtility.toObject(request.getData());
+                        object = ByteUtility.toObject(inBytes);
 
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
@@ -53,6 +74,7 @@ public class UDPServer implements Runnable {
                         } else if (receiveData.equals("getCountt")) {
                             System.out.println("it works somehow");
                         } else if (receiveData.substring(0, 2).equals("hb")) {
+                            System.out.println("incoming hb");
                             String[] hb = receiveData.split(":");
                             if (centerServer.servers.get(hb[1]) != null) {
                                 centerServer.servers.get(hb[1]).lastHB = new Date();
@@ -89,14 +111,16 @@ public class UDPServer implements Runnable {
                     }
                     reply.thenApply(v -> {
                         if (v.length() > 0) {
-                            byte[] sendBuffer = v.getBytes();
-                            System.out.println("Sending: " + v);
-                            DatagramPacket send = new DatagramPacket(sendBuffer, sendBuffer.length, request.getAddress(), request.getPort());
                             try {
-                                datagramSocket.send(send);
-                            } catch (Exception e) {
-                                System.out.println(e);
+                                byte[] sendBuffer = v.getBytes();
+                                System.out.println("Sending: " + v);
+                                ReliableSocketOutputStream outToClient = (ReliableSocketOutputStream) consocket.getOutputStream();
+                                PrintWriter outputBuffer = new PrintWriter(outToClient);
+                                outputBuffer.println(v);
+                            } catch (Exception e){
+                                e.printStackTrace();
                             }
+
 
                         }
                         return "ok";
@@ -106,7 +130,7 @@ public class UDPServer implements Runnable {
                     System.out.println("UDP Server socket is closed!");
                 }
             }
-        } catch (SocketException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         System.out.println("UDP Server is closed!");
@@ -114,7 +138,7 @@ public class UDPServer implements Runnable {
     }
 
     public void stopServer() {
-        datagramSocket.close();
+        ssocket.close();
         stop = false;
 
     }

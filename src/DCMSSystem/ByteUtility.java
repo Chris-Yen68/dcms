@@ -1,6 +1,7 @@
 package DCMSSystem;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 
 public class ByteUtility {
     public static byte[] concatenate(byte[] x1, byte[] x2)
@@ -24,6 +25,30 @@ public class ByteUtility {
             ois.close();
             bis.close();
         } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (ClassNotFoundException ex) {
+            ex.printStackTrace();
+        }
+        return obj;
+    }
+
+    public static Object toObject (InputStream is) throws IOException, ClassNotFoundException {
+        Object obj = null;
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int read = 0;
+            while ((read = is.read(buffer, 0, buffer.length)) != -1) {
+                baos.write(buffer, 0, read);
+            }
+            baos.flush();
+            ObjectInputStream ois= new ObjectInputStream(is);
+            obj = ois.readObject();
+            ois.close();
+            }
+
+            //bis.close();
+         catch (IOException ex) {
             ex.printStackTrace();
         } catch (ClassNotFoundException ex) {
             ex.printStackTrace();
