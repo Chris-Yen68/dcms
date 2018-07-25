@@ -25,7 +25,7 @@ public class DataSeedingClient {
                 continue;
             }
             String serverName=parameters[0].substring(0,3);
-            CenterService service= CenterServiceHelper.narrow(ncRef.resolve_str(serverName));
+            CenterService service= CenterServiceHelper.narrow(ncRef.resolve_str("FrontEndImpl"));
             CompletableFuture<String> result;
             switch (parameters[1]) {
                 case "createTRecord": {

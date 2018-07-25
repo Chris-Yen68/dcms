@@ -9,22 +9,22 @@ public class Log {
 
     public static String getCurrentTime() {
         Date date = new Date();
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String formattedDate = dateFormat.format(date);
         return formattedDate;
     }
 
-    public static void log(String time, String managerId, String operation, String result) {
+    public static void log(String time, String managerId, String operation, String result, String serverName) {
         File file = new File("./log");
         if (!file.exists()) {
             file.mkdir();
         }
         File inforClientFile = new File("./log/" + managerId + ".txt");
-        File inforServerFile = new File("./log/" + managerId.substring(0, 3) + ".txt");
+        File inforServerFile = new File("./log/" + serverName + ".txt");
 
         BufferedWriter clientBufferedWriter = null;
         BufferedWriter serverBufferedWriter = null;
-        String clientInformation = time + " | " + operation + " | " + managerId.substring(0, 3) + "Server" + " | " + result + "\n";
+        String clientInformation = time + " | " + operation + " | " + serverName + "Server" + " | " + result + "\n";
         String serverInformation = time + " | " + managerId + " | " + operation + " | " + result + "\n";
         if (inforServerFile.exists()) {
             try {

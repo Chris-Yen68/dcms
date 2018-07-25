@@ -254,7 +254,7 @@ public class CenterServer {
                 database.put(key, value);
             }
         }
-        Log.log(Log.getCurrentTime(), managerId, "createTRecord", "Create successfully! Record ID is " + teacherRecord.getRecordID());
+        Log.log(Log.getCurrentTime(), managerId, "createTRecord", "Create successfully! Record ID is " + teacherRecord.getRecordID(), centerName);
         return teacherRecord.getRecordID();
     }
 
@@ -273,7 +273,7 @@ public class CenterServer {
                 database.put(key, value);
             }
         }
-        Log.log(Log.getCurrentTime(), managerId, "createSRecord", "Create successfully! Record ID is " + studentRecord.getRecordID());
+        Log.log(Log.getCurrentTime(), managerId, "createSRecord", "Create successfully! Record ID is " + studentRecord.getRecordID(), centerName);
         return studentRecord.getRecordID();
     }
 
@@ -298,7 +298,7 @@ public class CenterServer {
         }).collect(Collectors.joining(" "));
 
         System.out.printf("\n" + result);
-        Log.log(Log.getCurrentTime(), managerId, "getRecordCounts", "Successful");
+        Log.log(Log.getCurrentTime(), managerId, "getRecordCounts", "Successful",centerName);
         return result;
     }
 
@@ -364,12 +364,12 @@ public class CenterServer {
                                     result = "Record updated";
 
                                     String operation = "edit: " + prop.getName();
-                                    Log.log(Log.getCurrentTime(), managerId, operation, result);
+                                    Log.log(Log.getCurrentTime(), managerId, operation, result, centerName);
                                     return result;
                                 } else {
                                     String operation = "edit: " + prop.getName();
                                     result = "The new value is not valid!";
-                                    Log.log(Log.getCurrentTime(), managerId, operation, result);
+                                    Log.log(Log.getCurrentTime(), managerId, operation, result,centerName);
                                     return result;
                                 }
                             }
@@ -377,13 +377,13 @@ public class CenterServer {
                         }
                         result = "fieldName doesn't match record type";
                         String operation = "edit: " + fieldName;
-                        Log.log(Log.getCurrentTime(), managerId, operation, result);
+                        Log.log(Log.getCurrentTime(), managerId, operation, result,centerName);
                         return result;
                     }
                 }
             }
             result = "No such record Id for this manager";
-            Log.log(Log.getCurrentTime(), managerId, "edit: " + fieldName, result);
+            Log.log(Log.getCurrentTime(), managerId, "edit: " + fieldName, result,centerName);
         }
         return result;
     }
@@ -449,7 +449,7 @@ public class CenterServer {
 
                 }
 
-                Log.log(Log.getCurrentTime(), managerID, "transferRecord:" + recordID, result);
+                Log.log(Log.getCurrentTime(), managerID, "transferRecord:" + recordID, result,centerName);
 
             } else {
 
@@ -463,7 +463,7 @@ public class CenterServer {
                     result += " The record is already in the Center,you do not need to tranfer!";
 
                 }
-                Log.log(Log.getCurrentTime(), managerID, "tranferRecord:" + recordID, result);
+                Log.log(Log.getCurrentTime(), managerID, "tranferRecord:" + recordID, result,centerName);
             }
         }
         return result;

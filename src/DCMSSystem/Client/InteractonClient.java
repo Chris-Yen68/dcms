@@ -39,7 +39,7 @@ public class InteractonClient {
         NamingContextExt ncRef =
                 NamingContextExtHelper.narrow(objRef);
 
-//        new DataSeedingClient().scan(ncRef);
+        new DataSeedingClient().scan(ncRef);
         new InteractonClient().scan(ncRef);
     }
 
@@ -72,6 +72,8 @@ public class InteractonClient {
         System.out.println("3> Get Record Counts.");
         System.out.println("4> Edit Record.");
         System.out.println("5> transferRecord.");
+        System.out.println("6> Test concurrently edit and transfer the same record.");
+        System.out.println("7> Exit.");
         option = scanner.nextInt();
         switch (option) {
             case 1: {
@@ -171,13 +173,7 @@ public class InteractonClient {
 
     public void testMultiThread(CenterService stub, String managerId) {
         String serverName=managerId.substring(0,3);
-        System.out.println("The record id list below are belongs to your server. Please input the record id as your test case.");
-        for (Map.Entry<String, String> entry: DataSeedingClient.recordForTestMultiThread.entrySet()
-                ) {
-            if(entry.getValue().equals(serverName)){
-                System.out.println(entry.getKey());
-            }
-        }
+        System.out.println("Please input the record id as your test case.");
         Scanner scanner=new Scanner(System.in);
         String recordId=scanner.nextLine().trim();
         System.out.println("Please input the field name you want to change:");

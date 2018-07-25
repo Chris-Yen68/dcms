@@ -316,7 +316,7 @@ public class UDPServer implements Runnable {
                         arrayList.add(wrapper.getRecords());
                         centerServer.database.put(wrapper.getRecords().getLastName().charAt(0), arrayList);
                     }
-                    Log.log(Log.getCurrentTime(), wrapper.getManagerID(), wrapper.getCommandName(), wrapper.getCommandName() + " successfully! Record ID is " + wrapper.getRecords().getRecordID());
+                    Log.log(Log.getCurrentTime(), wrapper.getManagerID(), wrapper.getCommandName(), wrapper.getCommandName() + " successfully! Record ID is " + wrapper.getRecords().getRecordID(),centerServer.getCenterName());
 
                     result = "operation" + ":" + wrapper.getCommandName() + ":" + receivedPacket.getSender() + ":" + receivedPacket.getSeqNUmber();
                 } else if (wrapper.getCommandName().equals("delete")) {
@@ -339,7 +339,7 @@ public class UDPServer implements Runnable {
 
                     String response = centerServer.editRecord(infor.get("managerId"), infor.get("recordID"), infor.get("fieldName"), infor.get("newValue"));
                     System.out.println(response);
-                    Log.log(Log.getCurrentTime(), infor.get("managerId"), wrapper.getCommandName(), wrapper.getCommandName() + " successfully! Record ID is " + infor.get("recordID"));
+                    Log.log(Log.getCurrentTime(), infor.get("managerId"), wrapper.getCommandName(), wrapper.getCommandName() + " successfully! Record ID is " + infor.get("recordID"), centerServer.getCenterName());
                     result = "operation" + ":" + "edit" + ":" + infor.get("recordID") + ":" + receivedPacket.getSender() + ":" + receivedPacket.getSeqNUmber();
 
                 }
