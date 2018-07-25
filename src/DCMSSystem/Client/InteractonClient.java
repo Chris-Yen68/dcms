@@ -72,6 +72,8 @@ public class InteractonClient {
         System.out.println("3> Get Record Counts.");
         System.out.println("4> Edit Record.");
         System.out.println("5> transferRecord.");
+        System.out.println("6> Test concurrently edit and transfer the same record.");
+        System.out.println("7> Exit.");
         option = scanner.nextInt();
         switch (option) {
             case 1: {
@@ -101,7 +103,7 @@ public class InteractonClient {
                 break;
             }
         }
-        if (option == 5) return false;
+        if (option == 7) return false;
         else return true;
     }
 
