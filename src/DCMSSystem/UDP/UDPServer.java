@@ -108,6 +108,7 @@ public class UDPServer implements Runnable {
                         reply=CompletableFuture.supplyAsync(()->{
                             if(inRequest.leaders != null){
                                 centerServer.leaders=inRequest.leaders;
+                                System.out.println("Leaders list: "+inRequest.leaders.toString());
                             }
                             int seqNumber = ByteUtility.generateSeq();
                             HashMap<String,String> askContent = inRequest.params;

@@ -71,7 +71,9 @@ public class FEUdpServer implements Runnable {
                                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                         byte[] bytes = ByteUtility.toByteArray(leaders);
                         leaders.entrySet().stream()
-                                .forEach(entry -> UDPClient.request(bytes, entry.getValue().udpPort));
+                                .forEach(entry -> {
+                                    System.out.println("Sending the list of leaders: "+leaders.toString());
+                                    UDPClient.request(bytes, entry.getValue().udpPort);});
 
                         /*
                             reply with ok

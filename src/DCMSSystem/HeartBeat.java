@@ -32,6 +32,7 @@ public class HeartBeat implements Runnable {
 
                         //means if leader - send HB to everybody, including FE, else - exclude FE
                         .filter(isLeader ? ((v) -> true) : ((v) -> servers.get(v).status != 2))
+                        .filter(v->!v.equals(centerServer.getCenterName()))
                         .forEach((v) -> {
                             ServerProperties server = servers.get(v);
                             //TODO: refactor the var name to make it more readable.
