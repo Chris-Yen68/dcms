@@ -103,13 +103,16 @@ public class UDPServer implements Runnable {
                             }
                             return "";
                         });
-                    } else if (object instanceof Request){
+                    }else if(object instanceof  Map){
+                        Map<String, ServerProperties> leaders = (Map) object;
+                        centerServer.leaders=leaders;
+                            System.out.println("Leaders list: "+leaders.keySet().toString());
+                    }
+                    else if (object instanceof Request){
+                        System.out.println("incoming Request");
                         Request inRequest = (Request) object;
                         reply=CompletableFuture.supplyAsync(()->{
-                            if(inRequest.leaders != null){
-                                centerServer.leaders=inRequest.leaders;
-                                System.out.println("Leaders list: "+inRequest.leaders.toString());
-                            }
+
                             int seqNumber = ByteUtility.generateSeq();
                             HashMap<String,String> askContent = inRequest.params;
                             byte [] temp =null;
