@@ -116,24 +116,26 @@ public class FrontEndImpl extends CenterServicePOA {
     }
 
     public String udpSender(Request request) {
-        byte[] serializedRequest = ByteUtility.toByteArray(request);
-        String serverName = request.params.get("managerId").substring(0, 3);
-        ServerProperties destination = servers.entrySet()
-                .stream()
-                .filter(s -> (s.getKey().substring(0, 3).equals(serverName))
-                        && (s.getValue().status == 1))
-                .map(s -> s.getValue())
-                .findFirst().get();
-        if (destination.state == 0) {
-            synchronized (lock) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        synchronized (this) {
+            byte[] serializedRequest = ByteUtility.toByteArray(request);
+            String serverName = request.params.get("managerId").substring(0, 3);
+            ServerProperties destination = servers.entrySet()
+                    .stream()
+                    .filter(s -> (s.getKey().substring(0, 3).equals(serverName))
+                            && (s.getValue().status == 1))
+                    .map(s -> s.getValue())
+                    .findFirst().get();
+            if (destination.state == 0) {
+                synchronized (lock) {
+                    try {
+                        lock.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+            return UDPClient.request(serializedRequest, destination.udpPort);
         }
-        return UDPClient.request(serializedRequest, destination.udpPort);
     }
 }
 
